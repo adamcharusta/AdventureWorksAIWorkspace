@@ -1,0 +1,9 @@
+[
+  { "date": "2026-05-26", "temperatureC": -2, "temperatureF": 28, "summary": "Freezing" },
+  { "date": "2026-05-27", "temperatureC": 5, "temperatureF": 41, "summary": "Cool" },
+  { "date": "2026-05-28", "temperatureC": 12, "temperatureF": 53, "summary": "Mild" },
+  { "date": "2026-05-29", "temperatureC": 18, "temperatureF": 64, "summary": "Warm" },
+  { "date": "2026-05-30", "temperatureC": 24, "temperatureF": 75, "summary": "Hot" },
+  { "date": "2026-05-31", "temperatureC": 27, "temperatureF": 80, "summary": "Sweltering" },
+  { "date": "2026-06-01", "temperatureC": 30, "temperatureF": 86, "summary": "Scorching" }
+]

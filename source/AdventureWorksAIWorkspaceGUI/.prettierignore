@@ -1,0 +1,20 @@
+node_modules
+dist
+build
+coverage
+.vite
+.cache
+package-lock.json
+*.min.js
+*.min.css
+
+# Auto-generated OpenAPI types
+src/api/schema.d.ts
+
+# Cypress artifacts
+cypress/screenshots
+cypress/videos
+cypress/downloads
+
+# Coverage reports
+coverage

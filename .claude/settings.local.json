@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(npm view *)",
+      "Bash(npm run *)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet run *)",
+      "Bash(curl *)",
+      "Bash(npx tsc *)",
+      "Bash(dotnet test *)",
+      "Bash(npm test *)",
+      "Bash(docker version *)"
     ]
   }
 }

@@ -29,3 +29,8 @@ coverage/
 # Frontend caches
 .eslintcache
 .stylelintcache
+
+# Cypress artifacts
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/

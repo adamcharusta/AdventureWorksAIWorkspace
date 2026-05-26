@@ -1,4 +1,5 @@
 using AdventureWorksAIWorkspaceAPI.Application.WeatherForecasts;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Wolverine;
 using Wolverine.Http;
 
@@ -12,7 +13,7 @@ public static class WeatherForecastsEndpoint
         OperationId = "GetWeatherForecasts",
         Summary = "Returns sample weather forecasts.",
         Description = "Returns deterministic sample weather forecast data through the CQRS application flow.")]
-    public static async Task<IResult> Get(
+    public static async Task<Ok<IReadOnlyList<WeatherForecastDto>>> Get(
         IMessageBus messageBus,
         int days = 5,
         CancellationToken cancellationToken = default)
@@ -21,6 +22,6 @@ public static class WeatherForecastsEndpoint
             new GetWeatherForecastsQuery(days),
             cancellationToken);
 
-        return Results.Ok(response.Forecasts);
+        return TypedResults.Ok(response.Forecasts);
     }
 }

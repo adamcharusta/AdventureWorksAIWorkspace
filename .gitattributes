@@ -1,0 +1,126 @@
+# Normalize all text files to LF in the repository.
+# Working tree uses LF on every platform except where overridden below.
+* text=auto eol=lf
+
+###############################################################################
+# .NET / backend source
+###############################################################################
+
+*.cs              text diff=csharp
+*.vb              text
+*.fs              text
+*.fsx             text
+*.csproj          text
+*.vbproj          text
+*.fsproj          text
+*.dbproj          text
+*.props           text
+*.targets         text
+*.config          text
+*.nuspec          text
+*.ruleset         text
+*.editorconfig    text
+
+# Visual Studio solution files prefer CRLF (some tooling is picky).
+*.sln             text eol=crlf
+
+###############################################################################
+# Frontend source
+###############################################################################
+
+*.ts              text
+*.tsx             text
+*.js              text
+*.jsx             text
+*.mjs             text
+*.cjs             text
+*.json            text
+*.css             text
+*.scss            text
+*.sass            text
+*.less            text
+*.html            text
+*.htm             text
+*.vue             text
+*.svelte          text
+
+###############################################################################
+# Docs / config
+###############################################################################
+
+*.md              text
+*.mdx             text
+*.txt             text
+*.yml             text
+*.yaml            text
+*.xml             text
+*.toml            text
+*.ini             text
+*.svg             text
+
+###############################################################################
+# Scripts — keep platform-native line endings
+###############################################################################
+
+*.sh              text eol=lf
+*.bash            text eol=lf
+*.bat             text eol=crlf
+*.cmd             text eol=crlf
+*.ps1             text eol=crlf
+*.psm1            text eol=crlf
+
+###############################################################################
+# Binary assets
+###############################################################################
+
+*.png             binary
+*.jpg             binary
+*.jpeg            binary
+*.gif             binary
+*.ico             binary
+*.bmp             binary
+*.webp            binary
+*.avif            binary
+*.pdf             binary
+*.zip             binary
+*.gz              binary
+*.tgz             binary
+*.7z              binary
+*.tar             binary
+*.dll             binary
+*.exe             binary
+*.so              binary
+*.dylib           binary
+*.pdb             binary
+*.snk             binary
+*.woff            binary
+*.woff2           binary
+*.ttf             binary
+*.eot             binary
+*.otf             binary
+*.mp3             binary
+*.mp4             binary
+*.mov             binary
+*.webm            binary
+*.xlsx            binary
+*.xls             binary
+*.docx            binary
+*.pptx            binary
+
+###############################################################################
+# GitHub linguist — hide generated/vendored output from language stats
+###############################################################################
+
+source/AdventureWorksAIWorkspaceAPI/artifacts/**       linguist-generated
+source/AdventureWorksAIWorkspaceGUI/dist/**            linguist-generated
+source/AdventureWorksAIWorkspaceGUI/node_modules/**    linguist-vendored
+package-lock.json                                      linguist-generated
+
+###############################################################################
+# Export ignore — exclude from `git archive`
+###############################################################################
+
+.gitattributes    export-ignore
+.gitignore        export-ignore
+.editorconfig     export-ignore
+.claude/          export-ignore
