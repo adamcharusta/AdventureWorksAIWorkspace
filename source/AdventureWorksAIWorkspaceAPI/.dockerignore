@@ -1,0 +1,67 @@
+# Git
+**/.git
+**/.gitignore
+**/.gitattributes
+
+# Docker
+**/.dockerignore
+**/Dockerfile
+**/Dockerfile.*
+**/docker-compose*.yml
+**/docker-compose*.yaml
+
+# Build outputs
+**/bin
+**/obj
+**/artifacts
+**/publish
+**/out
+
+# IDE / editors
+**/.vs
+**/.vscode
+**/.idea
+**/*.user
+**/*.suo
+**/*.userprefs
+**/.editorconfig.user
+
+# Test outputs
+**/TestResults
+**/*.trx
+**/*.coverage
+**/*.coveragexml
+**/coverage.cobertura.xml
+**/coverage.opencover.xml
+
+# Test projects (not part of the runtime image)
+tests/
+
+# NuGet
+**/*.nupkg
+**/*.snupkg
+**/packages
+**/project.lock.json
+**/project.fragment.lock.json
+**/*.binlog
+
+# Local / secret configuration
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/secrets.json
+**/*.pfx
+**/*.env
+**/.env.*
+
+# Dev-only launch profiles (not used inside containers)
+**/Properties/launchSettings.json
+
+# OS junk
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+
+# Repository docs (not needed inside the image)
+**/*.md
+**/LICENSE
+**/CHANGELOG*

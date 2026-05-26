@@ -44,6 +44,105 @@ Responsible for:
 - Chart configuration generation.
 - PDF export orchestration.
 
+## Backend Solution Structure
+
+The backend API solution is organized under:
+
+```txt
+source/AdventureWorksAIWorkspaceAPI/src/
+  Domain/
+  Application/
+  Infrastructure/
+  Api/
+```
+
+The intended dependency direction is:
+
+```mermaid
+flowchart LR
+    Domain[Domain]
+    Application[Application]
+    Infrastructure[Infrastructure]
+    Api[Api]
+
+    Application --> Domain
+    Infrastructure --> Application
+    Infrastructure --> Domain
+    Api --> Application
+    Api --> Infrastructure
+```
+
+### Domain Project
+
+Responsible for business concepts that should not depend on infrastructure concerns:
+
+- Entities.
+- Value objects.
+- Domain events.
+- Business rules and invariants.
+
+### Application Project
+
+Responsible for application use cases and CQRS orchestration:
+
+- Commands.
+- Queries.
+- Command/query handlers.
+- Application contracts.
+- FluentValidation validators.
+- Validation and pipeline behaviors.
+
+Wolverine is the planned in-process mediator for command and query dispatching. Application handlers should remain focused on use cases and avoid direct HTTP concerns. FluentValidation is the planned validation library for command and query input models.
+
+The project exposes `AddApplicationServices` through a static `DependencyInjection` class. Application-owned registrations, such as DTO mapping configuration and Wolverine application assembly configuration, should be configured there.
+
+### Infrastructure Project
+
+Responsible for external implementation details:
+
+- Application database persistence.
+- AdventureWorks database access.
+- AI/OpenAI integration.
+- Export providers.
+- File or document generation services.
+
+The project exposes `AddInfrastructureServices` through a static `DependencyInjection` class. Infrastructure-owned registrations, such as future database contexts, external clients, repositories, and provider implementations, should be configured there.
+
+### Api Project
+
+Responsible for the HTTP boundary:
+
+- Wolverine HTTP endpoints.
+- REST endpoints or controllers, if a feature needs conventional ASP.NET Core APIs.
+- Request/response contracts.
+- Authentication and authorization configuration.
+- Dependency injection composition.
+- API middleware and error handling.
+- Development OpenAPI documentation through Swagger UI.
+
+Mapster is the planned DTO mapping library. The Application project owns Mapster mapping configuration, while mapping definitions should be kept close to application DTOs or feature slices. Wolverine handlers should avoid mapper implementations that require service location.
+
+The project exposes `AddApiServices` through a static `DependencyInjection` class. API-owned registrations and middleware composition, such as Serilog, Wolverine HTTP, and endpoint mapping, should be configured there so `Program.cs` remains focused on application startup orchestration.
+
+API exceptions should be handled centrally through ASP.NET Core `IExceptionHandler` and returned as ProblemDetails responses. Application-level `NotFoundException` failures should map to HTTP 404 with a stable RFC 9110 `type`, user-facing `title`, and exception message in `detail`. Unexpected failures should be logged and returned as HTTP 500 without exposing internal exception details.
+
+### Reference Weather Forecast Vertical Slice
+
+The sample `GET /api/weather-forecasts` endpoint is the first reference vertical slice for the backend flow.
+
+The request flow is:
+
+1. Wolverine HTTP receives the request in the Api project.
+2. The endpoint sends `GetWeatherForecastsQuery` through Wolverine's message bus.
+3. FluentValidation validates the query in the Application project.
+4. The Application handler executes the use case.
+5. The handler calls the `IWeatherForecastProvider` abstraction.
+6. Infrastructure provides the sample implementation.
+7. Domain weather forecast values are mapped to application DTOs with Mapster.
+8. The API returns the DTO collection to the client.
+
+This endpoint is intentionally sample data only. Its purpose is to validate the CQRS, validation, mapping, dependency injection, Wolverine HTTP, Swagger, and test setup before business features are implemented.
+
 ### Application Database
 
 Stores application-owned data:
