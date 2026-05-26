@@ -74,7 +74,30 @@ Reports are user-specific, so authentication is required.
 
 ### Current Assumption
 
-Authentication approach is not decided yet.
+Use ASP.NET Core Identity backed by EF Core and the application database.
+
+Public self-registration should be disabled for the MVP. Admin users should create user accounts with the configured initial template password, and newly created users should be required to change their password during first login.
+
+The first bootstrapped Admin account should follow the same rule: it starts with the configured initial template password and must require password change on first login inside the application.
+
+---
+
+## Question: How should temporary passwords be handled beyond MVP?
+
+### Context
+
+Admin users will create accounts for other users, and the first Admin account will be bootstrapped during startup. The MVP uses a configured initial template password with forced password change on first login. The longer-term production flow may need a stronger delivery mechanism.
+
+### Possible Options
+
+- Use a shared initial template password provided through secure configuration and force password change on first login.
+- Generate unique temporary passwords and force password change on first login.
+- Send a one-time password setup link by email.
+- Generate a password reset token and require immediate password setup.
+
+### Current Assumption
+
+For MVP, the shared initial template password is acceptable if it is treated as a secret and requires immediate change on first login. The first bootstrapped Admin account must follow the same rule. For production hardening, evaluate unique temporary passwords, one-time setup links, or password reset tokens.
 
 ---
 

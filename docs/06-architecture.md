@@ -150,7 +150,7 @@ This endpoint is intentionally sample data only. Its purpose is to validate the 
 
 Stores application-owned data:
 
-- Users.
+- ASP.NET Core Identity users and roles.
 - Reports.
 - Report conversations.
 - Generated SQL metadata.
@@ -164,6 +164,26 @@ Stores application-owned data:
 Acts as the analytical business data source.
 
 This database should be separate from the application database and accessed through read-only credentials.
+
+### Data Access Strategy
+
+The backend should use different data access approaches for the two databases because they have different ownership and usage patterns.
+
+Recommended split:
+
+- Use EF Core as the primary ORM for the application database.
+- Use a lightweight read-only SQL execution layer for AdventureWorks analytical queries, with Dapper as the preferred MVP option.
+- Do not model the full AdventureWorks database as application domain entities unless a future semantic layer requires selected typed projections.
+- Do not run EF Core migrations against AdventureWorks.
+- Keep application database and AdventureWorks connection strings, credentials, permissions, and configuration options separate.
+
+The application database is owned by AdventureWorksAIWorkspace and should support strongly typed persistence, migrations, relationships, user-specific report storage, tags, favorites, and export metadata.
+
+Authentication-related user and role storage should be handled by ASP.NET Core Identity backed by EF Core in the application database.
+
+AdventureWorks is an external analytical source. The main query path will execute validated AI-generated SQL and return tabular result metadata for dashboard rendering. This makes a full ORM model less useful than a controlled read-only query executor.
+
+All AdventureWorks SQL must pass validation before execution, regardless of the data access library. Query execution should support timeout limits, result-size limits, audit logging, and clear error reporting.
 
 ### AI Integration
 

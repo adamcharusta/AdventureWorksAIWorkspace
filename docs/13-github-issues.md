@@ -141,6 +141,99 @@ Define the initial data model for saved reports and report conversations.
 
 ---
 
+## Issue: Define data access strategy for application and AdventureWorks databases
+
+### Context
+
+The backend will use two separate SQL Server databases with different responsibilities. The application database stores users, reports, conversations, tags, favorites, generated SQL metadata, chart configuration, and export metadata. The AdventureWorks database is an external analytical source used for read-only business queries generated or assisted by AI.
+
+### Goal
+
+Document the preferred data access strategy for both databases before implementing persistence or query execution code.
+
+### Scope
+
+- Application database ORM choice.
+- AdventureWorks read-only query execution approach.
+- Connection string and credential separation.
+- Migration ownership boundaries.
+- Query result shape for dashboard rendering.
+- Safety constraints for executing AI-generated SQL.
+
+### Out of Scope
+
+- EF Core implementation.
+- Dapper implementation.
+- Database migrations.
+- SQL validator implementation.
+- API endpoints.
+
+### Acceptance Criteria
+
+- [ ] Application database persistence strategy is documented.
+- [ ] AdventureWorks query execution strategy is documented.
+- [ ] Migration boundaries are documented.
+- [ ] Security and read-only constraints are documented.
+- [ ] Open questions or follow-up decisions are captured.
+
+### Labels
+
+- architecture
+- data-model
+- backend
+- security
+
+---
+
+## Issue: Define authentication, authorization, and user provisioning model
+
+### Context
+
+The application stores user-specific reports, conversations, favorites, tags, generated SQL metadata, and export history. Public registration is not desired for the MVP. Users should be managed by administrators, and access should be controlled through clear roles and policies.
+
+### Goal
+
+Define the authentication, authorization, and user provisioning model before implementation.
+
+### Scope
+
+- ASP.NET Core Identity-backed authentication.
+- Admin and User roles.
+- Closed public registration.
+- Admin-managed user creation.
+- Configured initial template password with forced first login password change.
+- Initial Admin bootstrap strategy.
+- Secret handling for bootstrap credentials.
+- Initial authorization policies.
+
+### Out of Scope
+
+- Authentication implementation.
+- Identity UI or API endpoint implementation.
+- Email provider implementation.
+- Multi-tenant or organization-level permissions.
+- Report sharing.
+
+### Acceptance Criteria
+
+- [ ] Public self-registration behavior is documented as disabled for MVP.
+- [ ] Admin and User roles are documented.
+- [ ] Admin-managed user creation is documented.
+- [ ] Initial template password and first login password change behavior is documented.
+- [ ] Initial Admin bootstrap rules are documented.
+- [ ] The first Admin account is documented as requiring password change on first login.
+- [ ] Secret management requirements are documented.
+- [ ] Follow-up open questions are captured.
+
+### Labels
+
+- security
+- backend
+- architecture
+- ux
+
+---
+
 ## Issue: Define dashboard layout requirements
 
 ### Context

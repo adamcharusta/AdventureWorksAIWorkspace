@@ -47,6 +47,144 @@ Trade-offs:
 
 ---
 
+## Decision: Use EF Core for application persistence and Dapper for AdventureWorks query execution
+
+### Date
+
+2026-05-27
+
+### Status
+
+Proposed
+
+### Context
+
+The backend needs to work with two SQL Server databases that have different responsibilities.
+
+The application database is owned by AdventureWorksAIWorkspace. It stores users, saved reports, report conversations, generated SQL metadata, chart definitions, tags, favorites, export history, and other application-owned records.
+
+The AdventureWorks database is an external analytical source. It should be queried through read-only credentials and should not be modified by the application. The AI SQL workflow may generate queries with different result shapes depending on the user's business question.
+
+Using the same full ORM approach for both databases would make the design look simpler, but it would not match the actual usage patterns. The application database benefits from strongly typed entities and migrations. The AdventureWorks database benefits from controlled, validated, read-only SQL execution and flexible tabular result shaping.
+
+### Decision
+
+Use a hybrid data access strategy:
+
+1. Use EF Core with the SQL Server provider as the primary ORM for the application database.
+2. Use Dapper with a SQL Server connection factory as the preferred MVP data access approach for AdventureWorks read-only analytical query execution.
+3. Keep separate connection strings, credentials, permissions, health checks, options, and logging metadata for each database.
+4. Use EF Core migrations only for the application database.
+5. Do not generate or maintain a full EF Core model for AdventureWorks during MVP.
+6. Keep all data access implementations in the Infrastructure project behind Application-level abstractions.
+7. Return AdventureWorks query results as a generic tabular result model containing columns, rows, data types, row count, and execution metadata.
+8. Require SQL validation, command timeouts, result-size limits, read-only credentials, and audit logging before any AI-generated SQL is executed.
+
+### Consequences
+
+Benefits:
+
+- EF Core fits application-owned relational data, migrations, relationships, and ASP.NET Core Identity-backed user storage.
+- Dapper fits read-only analytical SQL where result shapes are dynamic and SQL text is already part of the workflow.
+- The application does not need to model the entire AdventureWorks schema before useful reporting can be built.
+- Database ownership boundaries remain clear.
+- The AdventureWorks path can stay close to SQL Server behavior, which is useful for query validation, execution limits, and diagnostics.
+
+Trade-offs:
+
+- The backend will use two data access patterns, so conventions must be documented clearly.
+- Dapper does not provide migrations, change tracking, or aggregate persistence features; it should not become the default application database persistence layer.
+- Query result shaping, data type handling, and pagination/limits must be designed explicitly.
+- Integration tests will need coverage for both EF Core persistence and AdventureWorks read-only query execution.
+
+Follow-up decisions:
+
+- Decide the exact Identity user extension fields needed for profile and onboarding state.
+- Decide the exact generic tabular result contract returned by AdventureWorks query execution.
+- Decide whether a future semantic layer should introduce selected typed read models over AdventureWorks.
+- Benchmark representative AI-generated reports before optimizing beyond the initial hybrid approach.
+
+Reference notes:
+
+- Microsoft documents EF Core `DbContext` as the common ASP.NET Core pattern for relational data access, with scoped lifetime registration by default.
+- Microsoft documents EF Core raw SQL support, including parameterization guidance and `FromSqlRaw` risks.
+- The Dapper project documents parameterized queries, dynamic parameters, SQL Server support, and performance-oriented query mapping.
+
+---
+
+## Decision: Use ASP.NET Core Identity with closed registration and Admin-managed user provisioning
+
+### Date
+
+2026-05-27
+
+### Status
+
+Proposed
+
+### Context
+
+The application needs authenticated users because reports, conversations, favorites, tags, generated SQL metadata, and export history are user-specific.
+
+The MVP should not allow public self-registration. User access should be controlled by administrators. The initial product model needs two roles:
+
+1. Admin
+2. User
+
+The system also needs a way to create the first Admin account before any administrator exists.
+
+### Decision
+
+Use ASP.NET Core Identity backed by EF Core and the application database.
+
+Adopt the following MVP authentication and authorization model:
+
+1. Disable public self-registration.
+2. Create two initial roles: Admin and User.
+3. Allow Admin users to create and manage user accounts.
+4. Assign the User role by default when an Admin creates a normal user.
+5. Create provisioned accounts with the configured initial template password.
+6. Require all provisioned accounts to change the temporary password during the first login flow before accessing the main application.
+7. Apply the same first login password change rule to the first bootstrapped Admin account.
+8. Use policy-based authorization for application boundaries, even when the first policies map directly to roles.
+9. Bootstrap the first Admin account from secure startup configuration.
+10. Create the first Admin account with the configured initial template password.
+11. Do not commit plain-text passwords or real bootstrap credentials to `appsettings.json` or source control.
+12. Store bootstrap secrets in development User Secrets, environment variables, or a production secret store.
+
+### Consequences
+
+Benefits:
+
+- ASP.NET Core Identity provides a standard foundation for password hashing, user stores, roles, lockout, security stamps, password reset tokens, and future MFA.
+- Closed registration matches the desired controlled-access product model.
+- Admin-managed user provisioning avoids unknown public users entering the system.
+- Forced first login password change reduces risk from temporary or bootstrap credentials.
+- Policy-based authorization leaves room for future ownership, sharing, workspace, or audit permissions.
+
+Trade-offs:
+
+- The product needs an Admin user management experience.
+- Initial Admin bootstrap must be designed carefully to avoid persistent default credentials.
+- First login password change needs a clear UX and backend state.
+- Email delivery or another secure handoff mechanism may be needed for password setup links.
+
+Follow-up decisions:
+
+- Decide whether production onboarding should keep the shared initial template password model, use unique temporary passwords, emailed one-time links, or password reset tokens.
+- Decide whether Admin users can create other Admin users in MVP.
+- Decide whether inactive/locked users should remain visible in report ownership history.
+- Decide the exact API/session model for the React frontend, such as cookie-based Identity endpoints or token-based authentication.
+
+Reference notes:
+
+- Microsoft documents adding role services to Identity through `AddRoles`.
+- Microsoft documents role-based and policy-based authorization for ASP.NET Core.
+- Microsoft documents account confirmation and password recovery flows for ASP.NET Core Identity.
+- Microsoft documents that passwords and other secrets should not be stored in committed configuration files such as `appsettings.json`.
+
+---
+
 ## Decision: Use React, TypeScript, MUI, and MUI Charts for the frontend
 
 ### Date

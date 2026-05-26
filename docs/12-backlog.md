@@ -45,6 +45,16 @@ This document contains the initial product backlog for AdventureWorksAIWorkspace
 - [ ] Define SQL execution constraints.
 - [ ] Define SQL reuse and caching strategy.
 
+## Epic: Backend Data Access
+
+### Tasks
+
+- [ ] Define EF Core usage for the application database.
+- [ ] Define read-only AdventureWorks query execution strategy.
+- [ ] Define database connection configuration for both databases.
+- [ ] Define application database migration strategy.
+- [ ] Define query result shape for AI-generated analytical queries.
+
 ## Epic: Dashboard Rendering
 
 ### Tasks
@@ -60,8 +70,13 @@ This document contains the initial product backlog for AdventureWorksAIWorkspace
 
 ### Tasks
 
-- [ ] Define authentication approach.
-- [ ] Define user authorization rules.
+- [ ] Define ASP.NET Core Identity authentication approach.
+- [ ] Define Admin and User role authorization rules.
+- [ ] Define closed registration behavior.
+- [ ] Define Admin-managed user provisioning flow.
+- [ ] Define configured initial template password strategy.
+- [ ] Define forced first login password change flow.
+- [ ] Define initial Admin bootstrap strategy.
 - [ ] Define database access rules.
 - [ ] Define SQL safety rules.
 - [ ] Define prompt injection safeguards.

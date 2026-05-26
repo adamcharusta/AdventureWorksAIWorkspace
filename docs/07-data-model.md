@@ -6,6 +6,8 @@ This document describes the initial application data model assumptions for Adven
 
 This is not an implementation document yet. It should guide future database and domain modeling.
 
+The entities in this document describe the application database, not the AdventureWorks analytical database. AdventureWorks should remain an external read-only data source. The application may store generated SQL, query metadata, chart definitions, summaries, and report history, but it should not copy or own the full AdventureWorks schema.
+
 ## Core Entities
 
 ## User
@@ -17,8 +19,14 @@ Potential fields:
 - Id
 - Email
 - DisplayName
+- Role assignments
+- IsActive
+- MustChangePassword
+- LastLoginAt
 - CreatedAt
 - UpdatedAt
+
+The application should use ASP.NET Core Identity-backed user storage for authentication-related fields such as password hashes, security stamps, lockout state, and role membership. Application-specific user profile fields may extend the Identity user model.
 
 ## Report
 
