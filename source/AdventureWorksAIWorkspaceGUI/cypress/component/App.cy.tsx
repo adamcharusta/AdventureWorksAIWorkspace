@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import type { WeatherForecastDto } from '../../src/api/generated/model'
 import App from '../../src/App'
 
 function mountApp() {
@@ -15,9 +16,13 @@ function mountApp() {
 
 describe('<App /> component', () => {
   it('renders the temperature trend card after forecasts arrive', () => {
-    cy.intercept('GET', '/api/weather-forecasts?days=7', {
-      fixture: 'weather-forecasts.json',
-    }).as('getForecasts')
+    cy.fixture<WeatherForecastDto[]>('weather-forecasts.json').then(
+      (forecasts) => {
+        cy.intercept('GET', '/api/weather-forecasts?days=7', forecasts).as(
+          'getForecasts',
+        )
+      },
+    )
 
     mountApp()
 
@@ -28,8 +33,7 @@ describe('<App /> component', () => {
 
   it('shows an error alert when the request fails', () => {
     cy.intercept('GET', '/api/weather-forecasts?days=7', {
-      statusCode: 500,
-      body: { message: 'boom' },
+      forceNetworkError: true,
     }).as('getForecastsError')
 
     mountApp()

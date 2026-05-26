@@ -1,4 +1,5 @@
 using AdventureWorksAIWorkspaceAPI.Api.ExceptionHandling;
+using AdventureWorksAIWorkspaceAPI.Api.OpenApi;
 using AdventureWorksAIWorkspaceAPI.Application;
 using Ardalis.GuardClauses;
 using Serilog;
@@ -35,7 +36,12 @@ public static class DependencyInjection
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
         builder.Services.AddProblemDetails();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.SupportNonNullableReferenceTypes();
+            options.UseAllOfToExtendReferenceSchemas();
+            options.SchemaFilter<RequireNonNullableSchemaFilter>();
+        });
         builder.Services.AddWolverineHttp();
 
         return builder;

@@ -10,7 +10,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "api:types": "openapi-typescript http://localhost:5159/swagger/v1/swagger.json -o ./src/api/schema.d.ts",
+    "api:gen": "orval --config ./orval.config.ts",
+    "api:gen:watch": "orval --config ./orval.config.ts --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -28,13 +29,18 @@
     "@mui/material": "^9.0.1",
     "@mui/x-charts": "^9.3.0",
     "@tanstack/react-query": "^5.100.14",
-    "openapi-fetch": "^0.17.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "sonner": "^2.0.7",
+    "zod": "^4.4.3"
+  },
+  "overrides": {
+    "commander": "^14.0.3"
   },
   "devDependencies": {
-    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.8",
     "@eslint/js": "^10.0.1",
+    "@faker-js/faker": "^10.4.0",
+    "ajv": "^8.17.1",
     "@tanstack/react-query-devtools": "^5.100.14",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -58,7 +64,8 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
-    "openapi-typescript": "^7.13.0",
+    "msw": "^2.14.6",
+    "orval": "^7.13.2",
     "prettier": "^3.8.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",

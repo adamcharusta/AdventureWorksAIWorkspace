@@ -419,3 +419,205 @@ Trade-offs:
 
 - Application use cases should throw known exception types when a specific HTTP mapping is required.
 - New exception categories should be added deliberately to avoid leaking internal details.
+
+---
+
+## Decision: Adopt Orval as the OpenAPI client generator for the frontend
+
+### Date
+
+2026-05-26
+
+### Status
+
+Accepted
+
+### Context
+
+The initial frontend setup used `openapi-typescript` plus a hand-written `apiClient` (built on `openapi-fetch`) and a manually written `useWeatherForecasts` hook. Because the API endpoint returned `Results.Ok<IReadOnlyList<WeatherForecastDto>>`, Swashbuckle described the 200 response as `IResult`, which `openapi-typescript` rendered as an empty `Record<string, never>`. The hook therefore had to mirror the DTO type by hand and cast the response with `as unknown as WeatherForecast[]`.
+
+Both problems compound as the API grows: every new endpoint requires a hand-written hook, and any schema imprecision on the API side leaks into casts on the frontend.
+
+### Decision
+
+Replace `openapi-typescript` and `openapi-fetch` with [Orval](https://orval.dev/) configured to generate:
+
+1. TanStack Query hooks per tag (`react-query` client, `fetch` HTTP client).
+2. MSW v2 request handlers and faker-driven mocks per tag.
+3. Zod schemas per operation for runtime response validation.
+4. Per-schema model files under `src/api/generated/model/`.
+
+The configuration lives in `source/AdventureWorksAIWorkspaceGUI/orval.config.ts` and runs through `npm run api:gen` (one-shot) and `npm run api:gen:watch` (poll the OpenAPI document).
+
+### Consequences
+
+Benefits:
+
+- One generator command produces typed hooks, mocks, and Zod validators for every API endpoint.
+- Per-tag file splitting keeps the generated code navigable as the API grows.
+- Generated MSW handlers and faker factories give Vitest tests a single source of truth for fixture data.
+- The Zod output enables optional runtime contract enforcement if a slice opts in to it.
+
+Trade-offs:
+
+- Orval pulls in a large dependency graph (Spectral, IBM OpenAPI ruleset). Two npm `overrides` were required (`ajv@^8.17.1` and `commander@^14.0.3`) to resolve peer dependency clashes with `eslint-plugin-jsx-a11y` and `cypress`.
+- Generated files must never be edited; downstream code should depend only on the public hook/type surface.
+- The OpenAPI document must remain accurate. Imprecise schemas reach the frontend immediately.
+
+---
+
+## Decision: Mark non-nullable schema properties as required in the OpenAPI document
+
+### Date
+
+2026-05-26
+
+### Status
+
+Accepted
+
+### Context
+
+Swashbuckle defaults to treating every record property as optional in the generated OpenAPI document. With C# nullable reference types enabled, this caused every property of `WeatherForecastDto` to be emitted as `string?` / `number?` on the frontend even though the backend always populates them. Orval propagated the optionality straight into the generated hooks, which forced `?? ''` and `?? 0` fallbacks in JSX consumers.
+
+### Decision
+
+Enable two adjustments in the Swashbuckle configuration:
+
+1. Call `SupportNonNullableReferenceTypes()` so the generated schema honors C# nullable reference type annotations.
+2. Register a custom `RequireNonNullableSchemaFilter` (`source/AdventureWorksAIWorkspaceAPI/src/Api/OpenApi/RequireNonNullableSchemaFilter.cs`) that promotes every non-nullable property to the schema's `required` array. This works around a known Swashbuckle limitation where record primary constructor parameters are not added to `required` automatically.
+
+The schema filter also calls `UseAllOfToExtendReferenceSchemas()` so referenced schemas can be extended without losing the `$ref`.
+
+### Consequences
+
+Benefits:
+
+- DTO properties that the backend always populates are typed as non-optional on the frontend, eliminating defensive fallbacks in components.
+- The OpenAPI document accurately reflects backend nullability, which improves the value of generated Zod validators.
+
+Trade-offs:
+
+- Properties that should remain optional must be expressed with explicit `?` in C# or removed from the primary constructor.
+- Future request body schemas should be reviewed to make sure optional payload fields are intentionally left non-required.
+
+---
+
+## Decision: Use a custom fetch mutator that throws on non-2xx responses
+
+### Date
+
+2026-05-26
+
+### Status
+
+Accepted
+
+### Context
+
+The default Orval `fetch` HTTP client returns the parsed response regardless of HTTP status. With TanStack Query this means a 4xx or 5xx response is treated as a successful query, the `error` field stays empty, and the UI silently renders empty data. Hooks therefore could not surface API failures without each consumer re-checking `data.status`.
+
+### Decision
+
+Provide a custom fetch mutator at `source/AdventureWorksAIWorkspaceGUI/src/api/customFetch.ts` and wire it through `orval.config.ts` as `override.mutator`. The mutator:
+
+1. Calls `fetch` once with the request init forwarded from TanStack Query.
+2. Reads the body as text and attempts `JSON.parse`, falling back to the raw text when parsing fails.
+3. Throws a typed `ApiError` (with `status`, `body`, and `message`) when `response.ok` is `false`.
+4. Returns the orval-shaped response envelope (`{ data, status, headers }`) on success.
+
+### Consequences
+
+Benefits:
+
+- TanStack Query receives a thrown error on HTTP failures, so the `error` field, `isError` flag, and error boundaries behave correctly without extra checks in components.
+- Consumers can `instanceof ApiError` to read `status` and parsed error bodies when they need to differentiate failure modes.
+- Future logging or toast notification hooks can attach to the mutator instead of every call site.
+
+Trade-offs:
+
+- All generated calls now go through one mutator. Changes to it ripple through every endpoint.
+- The mutator does not yet handle authentication, retries, or request correlation; those concerns must be added intentionally.
+
+---
+
+## Decision: Use MSW for Vitest API mocking; keep cy.intercept for Cypress component tests
+
+### Date
+
+2026-05-26
+
+### Status
+
+Accepted
+
+### Context
+
+Vitest tests previously mocked the API by stubbing the hand-written `apiClient` with `vi.mock`. That coupled tests to the internal client shape and bypassed the actual fetch path, which masked failures in the new custom mutator. Cypress component tests used `cy.intercept`, which natively integrates with the Cypress runner.
+
+### Decision
+
+For Vitest:
+
+1. Install MSW v2 and set up an `msw/node` server in `src/test/server.ts`.
+2. Start the server in `src/test/setup.ts` with `onUnhandledRequest: 'error'` and reset handlers after each test.
+3. Use the generated MSW handler factory (`getGetWeatherForecastsMockHandler`) for the happy path and ad-hoc `http.get` handlers for failure modes.
+
+For Cypress component tests, keep using `cy.intercept`. Mounting an MSW Service Worker inside the Cypress component test runner would add infrastructure for no real benefit; `cy.intercept` is already runner-native and uses the generated `WeatherForecastDto` types for fixtures.
+
+### Consequences
+
+Benefits:
+
+- Vitest tests now exercise the real `fetch` -> custom mutator -> hook pipeline.
+- The generated MSW handler factory provides a single source of truth for fixture data shared with future tests.
+- Cypress tests remain simple and avoid Service Worker registration in the Cypress dev server.
+
+Trade-offs:
+
+- Two mocking technologies coexist; contributors must understand which runner uses which one.
+- MSW handlers must stay aligned with the generated request paths; a regenerated client could shift handler URLs.
+
+---
+
+## Decision: Use sonner with MUI Alert wrappers as the toast library
+
+### Date
+
+2026-05-26
+
+### Status
+
+Accepted
+
+### Context
+
+The application will need transient notifications for save outcomes, AI workflow status, export results, and SQL validation failures. The existing UI is built entirely on Material UI, so notifications should feel native to that visual language while staying flexible enough to render arbitrary JSX (e.g., links, secondary actions, custom layouts).
+
+The shortlist considered three modern libraries:
+
+1. `sonner` - fully JSX-driven (`toast.custom`), lightweight, very active.
+2. `notistack` - built on MUI Snackbar, MUI-native but with an older imperative API.
+3. `react-hot-toast` - similar to sonner in spirit, less active.
+
+### Decision
+
+Use [`sonner`](https://sonner.emilkowal.ski/) and expose a thin MUI-aware wrapper at `source/AdventureWorksAIWorkspaceGUI/src/lib/toast.tsx`. The wrapper:
+
+1. Renders every toast through `sonner.custom`, returning a MUI `Alert` (filled variant) with optional `AlertTitle` and a close button wired to `sonner.dismiss`.
+2. Exposes `toast.success`, `toast.error`, `toast.info`, `toast.warning` plus passthrough `dismiss` and `custom` exports.
+
+The `<Toaster />` provider is mounted once in `src/main.tsx` (`position="top-right"`).
+
+### Consequences
+
+Benefits:
+
+- Toasts use the same MUI severity palette and elevation as in-page alerts.
+- Consumers stay decoupled from `sonner`'s native API; switching the underlying library later only touches `src/lib/toast.tsx`.
+- Custom JSX inside toasts (links, secondary actions) remains trivial via `toast.custom`.
+
+Trade-offs:
+
+- Toasts are not visible in Vitest tests (no `<Toaster />` in the test render tree). Tests that need to assert toast output must wrap the subject under test with `<Toaster />`.
+- Cypress component tests would also need `<Toaster />` mounted to assert toast UI; the existing tests do not currently rely on toasts.

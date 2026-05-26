@@ -51,6 +51,11 @@ The system should:
 - TypeScript
 - Material UI / MUI
 - MUI Charts
+- TanStack Query for data fetching state
+- Orval for OpenAPI-driven client generation (hooks, MSW mocks, Zod schemas)
+- MSW for Vitest API mocking
+- sonner with MUI Alert wrappers for toast notifications
+- Cypress for component and end-to-end testing
 - Dashboard-oriented layout
 - Collapsible sidebars
 - AI chat panel

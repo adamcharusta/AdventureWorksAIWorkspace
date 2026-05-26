@@ -30,6 +30,9 @@ Responsible for:
 - Chart rendering with MUI Charts.
 - Report metadata interactions.
 - Export actions.
+- Transient user feedback through MUI-styled toasts.
+
+The frontend lives under `source/AdventureWorksAIWorkspaceGUI/`. It is bootstrapped with Vite and uses React 19, TypeScript, Material UI 9, MUI Charts, TanStack Query for server state, and sonner for toast notifications. Cypress drives end-to-end and component tests; Vitest drives unit and integration tests through jsdom.
 
 ### .NET REST API
 
@@ -204,6 +207,54 @@ Responsible for:
 - KPI cards.
 - Report metadata controls.
 - Export controls.
+
+## Frontend API Client Pipeline
+
+The frontend does not write API client code by hand. Instead it generates typed hooks, request handlers, mocks, and runtime validators from the API's OpenAPI document.
+
+The pipeline is:
+
+```mermaid
+flowchart LR
+    Swagger[/swagger/v1/swagger.json/]
+    Orval[Orval]
+    Hooks[TanStack Query hooks]
+    Mocks[MSW request handlers]
+    Zod[Zod schemas]
+    Models[Per-schema TypeScript models]
+    Mutator[customFetch mutator]
+    UI[React components]
+
+    Swagger --> Orval
+    Orval --> Hooks
+    Orval --> Mocks
+    Orval --> Zod
+    Orval --> Models
+    Hooks --> Mutator
+    Hooks --> UI
+```
+
+Key elements:
+
+- `source/AdventureWorksAIWorkspaceGUI/orval.config.ts` configures Orval with two outputs:
+  - `api` produces TanStack Query hooks, MSW handlers, and per-schema models under `src/api/generated/`.
+  - `apiZod` produces Zod schemas under `src/api/generated/zod/`.
+- The generated hooks call a custom fetch mutator at `src/api/customFetch.ts`. The mutator throws a typed `ApiError` whenever `response.ok` is `false`, so TanStack Query reports failures through its `error` channel instead of silently returning empty data.
+- The API contract is sourced from the running .NET API at `http://localhost:5159/swagger/v1/swagger.json`. The OpenAPI document is shaped by Swashbuckle plus a custom `RequireNonNullableSchemaFilter` so that non-nullable C# properties become non-optional fields on the frontend.
+- The npm script `npm run api:gen` regenerates the client. `npm run api:gen:watch` polls the API and regenerates on schema changes.
+- Generated files are ignored by ESLint and must not be edited by hand; downstream code depends only on the public hook and type surface.
+
+## Frontend Notifications
+
+The frontend exposes a thin toast wrapper at `source/AdventureWorksAIWorkspaceGUI/src/lib/toast.tsx`. The wrapper:
+
+- Renders every toast through `sonner.custom`.
+- Uses MUI `Alert` (filled variant) with optional `AlertTitle` and a built-in close button.
+- Exposes `toast.success`, `toast.error`, `toast.info`, `toast.warning` plus passthrough `dismiss` and `custom` exports.
+
+The `<Toaster />` provider is mounted once in `src/main.tsx` at the top-right position so toasts remain available for the whole application shell.
+
+Consumers should depend on the wrapper, not on `sonner` directly, so the underlying library can be swapped without touching call sites.
 
 ## Key Architectural Assumptions
 

@@ -10,7 +10,10 @@
       "Bash(npx tsc *)",
       "Bash(dotnet test *)",
       "Bash(npm test *)",
-      "Bash(docker version *)"
+      "Bash(docker version *)",
+      "Bash(npm uninstall *)",
+      "Bash(npm ls *)",
+      "Bash(git fetch *)"
     ]
   }
 }

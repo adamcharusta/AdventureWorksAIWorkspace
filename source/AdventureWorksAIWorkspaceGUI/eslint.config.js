@@ -28,7 +28,7 @@ const cypressGlobals = {
 export default defineConfig([
   globalIgnores([
     'dist',
-    'src/api/schema.d.ts',
+    'src/api/generated',
     'cypress/screenshots',
     'cypress/videos',
     'cypress/downloads',

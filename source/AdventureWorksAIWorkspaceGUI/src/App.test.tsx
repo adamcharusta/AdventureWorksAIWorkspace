@@ -4,22 +4,16 @@ import {
   screen,
   waitForElementToBeRemoved,
 } from '@testing-library/react'
+import { http, HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { apiClient } from './api/client'
+import type { WeatherForecastDto } from './api/generated/model'
+import { getGetWeatherForecastsMockHandler } from './api/generated/weather-forecasts/weather-forecasts.msw'
 import App from './App'
-import type { WeatherForecast } from './hooks/useWeatherForecasts'
+import { server } from './test/server'
 
-vi.mock('./api/client', () => ({
-  apiClient: {
-    GET: vi.fn(),
-  },
-}))
-
-const mockedGet = vi.mocked(apiClient.GET)
-
-const forecasts: WeatherForecast[] = [
+const forecasts: WeatherForecastDto[] = [
   {
     date: '2026-05-26',
     temperatureC: -2,
@@ -40,12 +34,8 @@ function renderApp(ui: ReactNode = <App />) {
 }
 
 describe('<App />', () => {
-  beforeEach(() => {
-    mockedGet.mockReset()
-  })
-
   it('shows a loading indicator while forecasts are being fetched', () => {
-    mockedGet.mockReturnValue(new Promise(() => {}))
+    server.use(http.get('*/api/weather-forecasts', () => new Promise(() => {})))
 
     renderApp()
 
@@ -54,11 +44,7 @@ describe('<App />', () => {
   })
 
   it('renders the temperature trend card after forecasts arrive', async () => {
-    mockedGet.mockResolvedValue({
-      data: forecasts as never,
-      error: undefined,
-      response: new Response(),
-    })
+    server.use(getGetWeatherForecastsMockHandler(forecasts))
 
     renderApp()
 
@@ -70,19 +56,21 @@ describe('<App />', () => {
     expect(
       screen.getByRole('heading', { name: /temperature trend/i, level: 6 }),
     ).toBeInTheDocument()
-    expect(mockedGet).toHaveBeenCalledWith('/api/weather-forecasts', {
-      params: { query: { days: 7 } },
-    })
   })
 
   it('shows an error alert when the forecasts request fails', async () => {
-    mockedGet.mockRejectedValue(new Error('Network down'))
+    server.use(
+      http.get(
+        '*/api/weather-forecasts',
+        () => new HttpResponse(null, { status: 500 }),
+      ),
+    )
 
     renderApp()
 
     await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'))
 
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('Failed to load forecasts: Network down')
+    expect(alert).toHaveTextContent(/Failed to load forecasts/i)
   })
 })
