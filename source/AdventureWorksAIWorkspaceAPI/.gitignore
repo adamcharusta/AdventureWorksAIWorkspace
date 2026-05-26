@@ -1,0 +1,22 @@
+# .NET build output
+bin/
+obj/
+artifacts/
+
+# .NET test output
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet packages and build logs
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+*.binlog
+
+# Local application settings
+appsettings.Local.json
+appsettings.*.Local.json
