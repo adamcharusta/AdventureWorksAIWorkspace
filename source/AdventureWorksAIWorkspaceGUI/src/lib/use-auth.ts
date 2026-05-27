@@ -1,8 +1,14 @@
-import { useCallback } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 import { authStore } from './auth-store'
 
 export const useAuth = () => {
+  const token = useSyncExternalStore(
+    authStore.subscribe,
+    authStore.getToken,
+    authStore.getToken,
+  )
+
   const login = useCallback((token: string, refreshToken?: string) => {
     authStore.setToken(token)
     if (refreshToken) {
@@ -14,8 +20,7 @@ export const useAuth = () => {
     authStore.clearTokens()
   }, [])
 
-  const token = authStore.getToken()
-  const isAuthenticated = authStore.isAuthenticated()
+  const isAuthenticated = token !== null
 
   return {
     token,

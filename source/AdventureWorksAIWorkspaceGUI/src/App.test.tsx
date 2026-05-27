@@ -7,11 +7,12 @@ import {
 import { http, HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import type { WeatherForecastDto } from './api/generated/model'
 import { getGetWeatherForecastsMockHandler } from './api/generated/weather-forecasts/weather-forecasts.msw'
 import App from './App'
+import { ThemeModeProvider } from './lib/theme-mode'
 import { server } from './test/server'
 
 const forecasts: WeatherForecastDto[] = [
@@ -25,16 +26,34 @@ const forecasts: WeatherForecastDto[] = [
   { date: '2026-05-28', temperatureC: 24, temperatureF: 75, summary: 'Hot' },
 ]
 
+function createValidJwtToken() {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const payload = btoa(
+    JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 60 * 10 }),
+  )
+
+  return `${header}.${payload}.signature`
+}
+
 function renderApp(ui: ReactNode = <App />) {
+  localStorage.setItem('auth_token', createValidJwtToken())
+  localStorage.setItem('refresh_token', 'refresh-token')
+
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>{ui}</MemoryRouter>
+      <ThemeModeProvider>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </ThemeModeProvider>
     </QueryClientProvider>,
   )
 }
+
+afterEach(() => {
+  localStorage.clear()
+})
 
 describe('<App />', () => {
   it('shows a loading indicator while forecasts are being fetched', () => {

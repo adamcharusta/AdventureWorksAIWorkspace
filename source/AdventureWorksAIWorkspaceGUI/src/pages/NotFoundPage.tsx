@@ -3,10 +3,16 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { Link as RouterLink } from 'react-router-dom'
 
+import { ThemeModeSwitch } from '../components/ThemeModeSwitch'
+
 export function NotFoundPage() {
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Stack spacing={1}>
+        <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
+          <ThemeModeSwitch />
+        </Stack>
+
         <Typography variant="h4" component="h1">
           Page not found
         </Typography>

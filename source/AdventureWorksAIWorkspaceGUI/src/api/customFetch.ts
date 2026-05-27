@@ -1,3 +1,4 @@
+import { refreshSession } from '../lib/auth-service'
 import { authStore } from '../lib/auth-store'
 
 export class ApiError extends Error {
@@ -12,27 +13,56 @@ export class ApiError extends Error {
   }
 }
 
+type CustomFetchOptions = RequestInit & {
+  skipAuthRefresh?: boolean
+}
+
+function isAuthEndpoint(url: string): boolean {
+  const path = new URL(url, window.location.origin).pathname
+  return (
+    path === '/api/auth/login' ||
+    path === '/api/auth/refresh' ||
+    path === '/api/auth/set-first-password'
+  )
+}
+
 export const customFetch = async <T>(
   url: string,
-  options?: RequestInit,
+  options?: CustomFetchOptions,
 ): Promise<T> => {
-  const headers = new Headers(options?.headers || {})
+  const runRequest = async () => {
+    const headers = new Headers(options?.headers || {})
 
-  // Inject JWT token if available
-  const token = authStore.getToken()
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
+    // Inject JWT token if available
+    const token = authStore.getToken()
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+
+    // Set default content type for JSON if not already set
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json')
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+    })
   }
 
-  // Set default content type for JSON if not already set
-  if (!headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
-  }
+  let response = await runRequest()
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  })
+  if (
+    response.status === 401 &&
+    !options?.skipAuthRefresh &&
+    !isAuthEndpoint(url)
+  ) {
+    const refreshed = await refreshSession()
+
+    if (refreshed) {
+      response = await runRequest()
+    }
+  }
 
   const rawBody = [204, 205, 304].includes(response.status)
     ? ''
