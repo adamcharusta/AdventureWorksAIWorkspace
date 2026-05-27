@@ -38,6 +38,9 @@ Temporary Items/
 .vs/
 .vscode/
 .idea/
+.env
+.env.local
+.env.*.local
 *.suo
 *.user
 *.userosscache

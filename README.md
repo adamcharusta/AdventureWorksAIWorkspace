@@ -82,6 +82,16 @@ Recommended reading order:
 6. `docs/08-ai-sql-workflow.md`
 7. `docs/12-backlog.md`
 8. `docs/15-open-questions.md`
+9. `docs/18-local-docker-mssql.md`
+10. `docs/19-local-docker-stack.md`
+
+## Local Docker Stack
+
+The repository includes a root `compose.yaml` for local development.
+
+The Compose setup starts Seq, SQL Server 2025 Developer Edition, the ASP.NET Core API, and the React GUI. It also runs a one-shot `adventureworks-init` service. The init service checks whether `AdventureWorks2025` already exists, downloads Microsoft's published AdventureWorks backup only when needed, and restores the database.
+
+See `docs/18-local-docker-mssql.md` for SQL Server details and `docs/19-local-docker-stack.md` for full-stack commands.
 
 ## Agent Rules
 

@@ -112,6 +112,104 @@ Reference notes:
 
 ---
 
+## Decision: Use Docker Compose with an AdventureWorks init job for local SQL Server
+
+### Date
+
+2026-05-27
+
+### Status
+
+Accepted
+
+### Context
+
+Developers need a repeatable local SQL Server environment for the AdventureWorks analytical database. The database should be restored automatically when it is missing, while avoiding repeated downloads and restores once local data already exists.
+
+### Decision
+
+Use the root `compose.yaml` to run:
+
+1. A `sqlserver` service based on `mcr.microsoft.com/mssql/server:2025-latest`.
+2. A one-shot `adventureworks-init` service that waits for SQL Server health, checks `sys.databases`, downloads the AdventureWorks backup only if needed, detects logical file names with `RESTORE FILELISTONLY`, and restores the database.
+
+The default local sample database is `AdventureWorks2025`, restored from Microsoft's AdventureWorks backup release.
+
+### Consequences
+
+Benefits:
+
+- Developers can start a local AdventureWorks SQL Server with one Compose command.
+- SQL Server data persists across container restarts through a Docker volume.
+- The backup file is cached in a Docker volume and is not downloaded repeatedly.
+- The restore behavior is idempotent because the init job first checks whether the database exists.
+- The init job does not rely on guessed logical file names inside the `.bak` file.
+
+Trade-offs:
+
+- The first startup requires downloading a large `.bak` file.
+- The setup is intended for local development and testing, not production.
+- Developers must provide a strong local `MSSQL_SA_PASSWORD` through environment configuration.
+
+Reference notes:
+
+- Microsoft Learn documents direct AdventureWorks `.bak` downloads and Linux `RESTORE DATABASE` syntax.
+- Microsoft Learn documents SQL Server Linux containers, `MSSQL_SA_PASSWORD`, and `/opt/mssql-tools18/bin/sqlcmd`.
+
+---
+
+## Decision: Run Seq, API, and GUI through the local Docker Compose stack
+
+### Date
+
+2026-05-27
+
+### Status
+
+Accepted
+
+### Context
+
+Developers need a single local command that can start the observable application stack, not only the SQL Server dependency. The API should run with local configuration, the GUI should proxy API calls inside the Docker network, and structured logs should be visible in Seq.
+
+### Decision
+
+Extend the root `compose.yaml` with:
+
+1. `seq` using the official `datalust/seq` image, with local no-auth first-run configuration.
+2. `api` built from `source/AdventureWorksAIWorkspaceAPI/src/Api/Dockerfile`.
+3. `gui` built from `source/AdventureWorksAIWorkspaceGUI/Dockerfile`.
+
+The API runs with `ASPNETCORE_ENVIRONMENT=Development`, receives required local secrets through environment variables, connects to SQL Server through the internal service name `sqlserver`, and sends Serilog events to Seq through `http://seq`.
+
+The GUI runs through nginx on port 8080 inside the container and proxies `/api/` requests to `http://api:8080`.
+
+Compose health checks gate local startup: SQL Server is checked with `sqlcmd`, Seq is checked over local HTTP, the API exposes `/health`, and the GUI waits for the API to become healthy.
+
+### Consequences
+
+Benefits:
+
+- A developer can start the local application stack with `docker compose up -d --build`.
+- Seq is available locally for structured API log inspection.
+- The GUI and API communicate through stable Docker service names.
+- Host port mappings are configurable through `.env`.
+- Startup ordering is less fragile because dependent services wait for health checks instead of process start alone.
+
+Trade-offs:
+
+- The Compose setup needs local development secrets for SQL Server, JWT signing, and the initial Admin account.
+- Local Compose currently uses the SQL Server `sa` login for API database access. Least-privilege local logins should be added later.
+- API startup still depends on valid EF Core migration state for the application database.
+- Seq authentication is disabled in local Compose only and must not be copied to production.
+
+Reference notes:
+
+- Seq documentation describes the `datalust/seq` Docker image, `ACCEPT_EULA=Y`, `/data` persistence, and host port mapping to container port `80`.
+- Docker Compose documentation describes defining and running multi-container applications from a Compose file.
+
+---
+
 ## Decision: Use ASP.NET Core Identity with closed registration and Admin-managed user provisioning
 
 ### Date

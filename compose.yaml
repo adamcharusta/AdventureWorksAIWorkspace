@@ -1,0 +1,118 @@
+name: adventureworks-ai-workspace
+
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: adventureworks-ai-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "${SEQ_PORT:-5341}:80"
+    volumes:
+      - seq-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --show-error http://localhost/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: adventureworks-ai-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in your environment or local .env file}
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+      - adventureworks-backups:/var/opt/mssql/backup
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" >/dev/null 2>&1 || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  adventureworks-init:
+    build:
+      context: ./docker/mssql
+      dockerfile: Dockerfile
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      SQLSERVER_HOST: sqlserver
+      SQLSERVER_PORT: 1433
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in your environment or local .env file}
+      ADVENTUREWORKS_DATABASE: ${ADVENTUREWORKS_DATABASE:-AdventureWorks2025}
+      ADVENTUREWORKS_BACKUP_URL: ${ADVENTUREWORKS_BACKUP_URL:-https://github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorks2025.bak}
+      ADVENTUREWORKS_BACKUP_FILE: ${ADVENTUREWORKS_BACKUP_FILE:-AdventureWorks2025.bak}
+    volumes:
+      - adventureworks-backups:/var/opt/mssql/backup
+    restart: "no"
+
+  api:
+    build:
+      context: ./source/AdventureWorksAIWorkspaceAPI
+      dockerfile: src/Api/Dockerfile
+    image: adventureworks-ai-api:dev
+    container_name: adventureworks-ai-api
+    depends_on:
+      seq:
+        condition: service_healthy
+      sqlserver:
+        condition: service_healthy
+      adventureworks-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__AdventureWorksAIWorkspaceDatabase: Server=sqlserver,1433;Database=AdventureWorksAIWorkspace;User Id=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in your environment or local .env file};Encrypt=True;TrustServerCertificate=True;
+      ConnectionStrings__AdventureWorksDatabase: Server=sqlserver,1433;Database=${ADVENTUREWORKS_DATABASE:-AdventureWorks2025};User Id=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in your environment or local .env file};Encrypt=True;TrustServerCertificate=True;
+      Identity__InitialAdmin__Enabled: ${INITIAL_ADMIN_ENABLED:-true}
+      Identity__InitialAdmin__UserName: ${INITIAL_ADMIN_USERNAME:-admin}
+      Identity__InitialAdmin__Email: ${INITIAL_ADMIN_EMAIL:-admin@adventureworksai.local}
+      Identity__InitialAdmin__TemplatePassword: ${INITIAL_ADMIN_PASSWORD:?Set INITIAL_ADMIN_PASSWORD in your environment or local .env file}
+      Identity__Jwt__Issuer: AdventureWorksAIWorkspaceAPI
+      Identity__Jwt__Audience: AdventureWorksAIWorkspaceGUI
+      Identity__Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in your environment or local .env file}
+      Serilog__WriteTo__1__Args__serverUrl: http://seq
+    ports:
+      - "${API_PORT:-5159}:8080"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -ec 'exec 3<>/dev/tcp/localhost/8080; printf \"GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; read -r status <&3; [[ \"$$status\" == *\" 200 \"* ]]'"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  gui:
+    build:
+      context: ./source/AdventureWorksAIWorkspaceGUI
+      dockerfile: Dockerfile
+    image: adventureworks-ai-gui:dev
+    container_name: adventureworks-ai-gui
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      BACKEND_URL: http://api:8080
+    ports:
+      - "${GUI_PORT:-5173}:8080"
+
+volumes:
+  seq-data:
+  sqlserver-data:
+  adventureworks-backups:

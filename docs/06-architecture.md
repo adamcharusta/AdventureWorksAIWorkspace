@@ -165,6 +165,8 @@ Acts as the analytical business data source.
 
 This database should be separate from the application database and accessed through read-only credentials.
 
+For local development, the root `compose.yaml` runs SQL Server 2025 Developer Edition and a one-shot AdventureWorks initialization container. The init container waits for SQL Server, checks whether the configured AdventureWorks database exists, downloads the official Microsoft sample backup only when needed, and restores it into SQL Server. Docker volumes persist both SQL Server data files and the downloaded backup between runs.
+
 ### Data Access Strategy
 
 The backend should use different data access approaches for the two databases because they have different ownership and usage patterns.
@@ -283,3 +285,15 @@ Consumers should depend on the wrapper, not on `sonner` directly, so the underly
 - AI-generated SQL should always pass through validation before execution.
 - Reports should store enough metadata to be reopened without regenerating everything.
 - SQL query reuse may reduce AI token usage.
+
+## Local Docker Composition
+
+The local Compose stack includes:
+
+- `seq` for structured local log inspection.
+- `sqlserver` for local SQL Server hosting both separate development databases.
+- `adventureworks-init` for idempotent AdventureWorks restore.
+- `api` for the ASP.NET Core backend.
+- `gui` for the React frontend served by nginx.
+
+The GUI proxies `/api/` requests to the API over the internal Docker network. The API writes Serilog events to Seq over the internal Docker network.

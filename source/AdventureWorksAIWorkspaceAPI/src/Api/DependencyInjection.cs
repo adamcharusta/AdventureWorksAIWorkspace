@@ -35,6 +35,7 @@ public static class DependencyInjection
 
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+        builder.Services.AddHealthChecks();
         builder.Services.AddProblemDetails();
         builder.Services.AddSwaggerGen(options =>
         {
@@ -80,6 +81,8 @@ public static class DependencyInjection
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.MapHealthChecks("/health");
 
         app.MapWolverineEndpoints(options =>
         {
