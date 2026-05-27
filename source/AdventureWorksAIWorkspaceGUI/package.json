@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 4173 --strictPort",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -16,8 +16,10 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "cy:open": "cypress open",
-    "cy:e2e": "cypress run --e2e",
+    "cy:open:dev": "vite --port 4174 --strictPort",
+    "cy:open": "start-server-and-test cy:open:dev http://localhost:4174 \"cypress open --e2e --config baseUrl=http://localhost:4174\"",
+    "cy:e2e:dev": "vite --port 4174 --strictPort",
+    "cy:e2e": "start-server-and-test cy:e2e:dev http://localhost:4174 \"cypress run --e2e --config baseUrl=http://localhost:4174\"",
     "cy:component": "cypress run --component",
     "preview": "vite preview"
   },
@@ -36,9 +38,6 @@
     "react-router-dom": "^7.15.1",
     "sonner": "^2.0.7",
     "zod": "^4.4.3"
-  },
-  "overrides": {
-    "commander": "^14.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -70,6 +69,7 @@
     "msw": "^2.14.6",
     "orval": "^7.13.2",
     "prettier": "^3.8.3",
+    "start-server-and-test": "^2.0.13",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",

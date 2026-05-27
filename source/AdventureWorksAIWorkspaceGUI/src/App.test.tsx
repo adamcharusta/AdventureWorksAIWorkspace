@@ -1,98 +1,53 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  render,
-  screen,
-  waitForElementToBeRemoved,
-} from '@testing-library/react'
-import { http, HttpResponse } from 'msw'
-import type { ReactNode } from 'react'
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it } from 'vitest'
 
-import type { WeatherForecastDto } from './api/generated/model'
-import { getGetWeatherForecastsMockHandler } from './api/generated/weather-forecasts/weather-forecasts.msw'
 import App from './App'
-import { ThemeModeProvider } from './lib/theme-mode'
-import { server } from './test/server'
-
-const forecasts: WeatherForecastDto[] = [
-  {
-    date: '2026-05-26',
-    temperatureC: -2,
-    temperatureF: 28,
-    summary: 'Freezing',
-  },
-  { date: '2026-05-27', temperatureC: 12, temperatureF: 53, summary: 'Mild' },
-  { date: '2026-05-28', temperatureC: 24, temperatureF: 75, summary: 'Hot' },
-]
-
-function createValidJwtToken() {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const payload = btoa(
-    JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 60 * 10 }),
-  )
-
-  return `${header}.${payload}.signature`
-}
-
-function renderApp(ui: ReactNode = <App />) {
-  localStorage.setItem('auth_token', createValidJwtToken())
-  localStorage.setItem('refresh_token', 'refresh-token')
-
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  })
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <ThemeModeProvider>
-        <MemoryRouter>{ui}</MemoryRouter>
-      </ThemeModeProvider>
-    </QueryClientProvider>,
-  )
-}
-
-afterEach(() => {
-  localStorage.clear()
-})
+import { renderWithProviders } from './test/render-utils'
 
 describe('<App />', () => {
-  it('shows a loading indicator while forecasts are being fetched', () => {
-    server.use(http.get('*/api/weather-forecasts', () => new Promise(() => {})))
+  it('renders home page by default for authenticated users', async () => {
+    renderWithProviders(<App />, { route: '/', isAuthenticated: true })
 
-    renderApp()
-
-    expect(screen.getByRole('progressbar')).toBeInTheDocument()
-    expect(screen.queryByText('Temperature trend')).not.toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', {
+        name: /adventure works/i,
+        level: 1,
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument()
   })
 
-  it('renders the temperature trend card after forecasts arrive', async () => {
-    server.use(getGetWeatherForecastsMockHandler(forecasts))
-
-    renderApp()
-
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'))
+  it('redirects unauthenticated users from protected route to login page', () => {
+    renderWithProviders(<App />, { route: '/', isAuthenticated: false })
 
     expect(
-      screen.getByRole('heading', { name: /weather forecasts/i, level: 1 }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: /temperature trend/i, level: 6 }),
+      screen.getByRole('heading', { name: /sign in/i, level: 2 }),
     ).toBeInTheDocument()
   })
 
-  it('shows an error alert when the forecasts request fails', async () => {
-    server.use(
-      http.get(
-        '*/api/weather-forecasts',
-        () => new HttpResponse(null, { status: 500 }),
-      ),
-    )
+  it('logs out user and navigates to login page', async () => {
+    const user = userEvent.setup()
 
-    renderApp()
+    renderWithProviders(<App />, { route: '/', isAuthenticated: true })
 
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'))
+    await user.click(await screen.findByRole('button', { name: /log out/i }))
 
-    const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent(/Failed to load forecasts/i)
+    expect(localStorage.getItem('auth_token')).toBeNull()
+    expect(localStorage.getItem('refresh_token')).toBeNull()
+    expect(
+      screen.getByRole('heading', { name: /sign in/i, level: 2 }),
+    ).toBeInTheDocument()
+  })
+
+  it('renders not found page for unknown route', () => {
+    renderWithProviders(<App />, {
+      route: '/unknown-route',
+      isAuthenticated: false,
+    })
+
+    expect(
+      screen.getByRole('heading', { name: /page not found/i, level: 1 }),
+    ).toBeInTheDocument()
   })
 })

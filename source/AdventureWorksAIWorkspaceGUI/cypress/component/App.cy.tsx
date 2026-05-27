@@ -1,44 +1,57 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 
-import type { WeatherForecastDto } from '../../src/api/generated/model'
 import App from '../../src/App'
+import { ThemeModeProvider } from '../../src/lib/theme-mode'
+import { createAuthTokens } from '../support/auth-helpers'
 
-function mountApp() {
+function mountApp(initialEntries: string[] = ['/']) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
+
   return cy.mount(
     <QueryClientProvider client={queryClient}>
-      <App />
+      <MemoryRouter initialEntries={initialEntries}>
+        <ThemeModeProvider>
+          <App />
+        </ThemeModeProvider>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
 
 describe('<App /> component', () => {
-  it('renders the temperature trend card after forecasts arrive', () => {
-    cy.fixture<WeatherForecastDto[]>('weather-forecasts.json').then(
-      (forecasts) => {
-        cy.intercept('GET', '/api/weather-forecasts?days=7', forecasts).as(
-          'getForecasts',
-        )
-      },
-    )
-
-    mountApp()
-
-    cy.wait('@getForecasts')
-    cy.contains('h1', 'Weather forecasts').should('be.visible')
-    cy.contains('h6', 'Temperature trend').should('be.visible')
+  beforeEach(() => {
+    cy.clearLocalStorage()
   })
 
-  it('shows an error alert when the request fails', () => {
-    cy.intercept('GET', '/api/weather-forecasts?days=7', {
-      forceNetworkError: true,
-    }).as('getForecastsError')
+  it('redirects unauthenticated user to login', () => {
+    mountApp(['/'])
 
-    mountApp()
+    cy.contains('h2', 'Sign in').should('be.visible')
+  })
 
-    cy.wait('@getForecastsError')
-    cy.get('[role="alert"]').should('contain.text', 'Failed to load forecasts')
+  it('shows home page when authenticated', () => {
+    const tokens = createAuthTokens()
+    localStorage.setItem('auth_token', tokens.accessToken)
+    localStorage.setItem('refresh_token', tokens.refreshToken)
+
+    mountApp(['/'])
+
+    cy.contains('h1', 'Adventure Works').should('be.visible')
+  })
+
+  it('logs out and returns to sign in', () => {
+    const tokens = createAuthTokens()
+    localStorage.setItem('auth_token', tokens.accessToken)
+    localStorage.setItem('refresh_token', tokens.refreshToken)
+
+    mountApp(['/'])
+
+    cy.contains('h1', 'Adventure Works').should('be.visible')
+    cy.contains('button', 'Log out').click()
+
+    cy.contains('h2', 'Sign in').should('be.visible')
   })
 })

@@ -9,5 +9,6 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => {
   cleanup()
   server.resetHandlers()
+  localStorage.clear()
 })
 afterAll(() => server.close())

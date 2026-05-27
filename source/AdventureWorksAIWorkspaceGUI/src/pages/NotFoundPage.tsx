@@ -20,7 +20,7 @@ export function NotFoundPage() {
           The route does not exist. Go back to the home page.
         </Typography>
         <Typography component={RouterLink} to="/" color="primary">
-          Back to Weather forecasts
+          Back to Home Page
         </Typography>
       </Stack>
     </Container>

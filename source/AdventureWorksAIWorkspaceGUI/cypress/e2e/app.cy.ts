@@ -1,25 +1,65 @@
+import { createAuthTokens } from '../support/auth-helpers'
+
 describe('App E2E', () => {
-  it('renders the temperature trend chart from stubbed forecasts', () => {
-    cy.intercept('GET', '/api/weather-forecasts?days=7', {
-      fixture: 'weather-forecasts.json',
-    }).as('getForecasts')
-
-    cy.visit('/')
-
-    cy.wait('@getForecasts')
-    cy.contains('h1', 'Weather forecasts').should('be.visible')
-    cy.contains('h6', 'Temperature trend').should('be.visible')
+  beforeEach(() => {
+    cy.clearLocalStorage()
   })
 
-  it('shows an error alert when the API returns 500', () => {
-    cy.intercept('GET', '/api/weather-forecasts?days=7', {
-      statusCode: 500,
-      body: { message: 'boom' },
-    }).as('getForecastsError')
-
+  it('redirects unauthenticated user from home to login page', () => {
     cy.visit('/')
 
-    cy.wait('@getForecastsError')
-    cy.get('[role="alert"]').should('contain.text', 'Failed to load forecasts')
+    cy.location('pathname').should('eq', '/login')
+    cy.contains('h2', 'Sign in').should('be.visible')
+  })
+
+  it('signs in and logs out', () => {
+    const tokens = createAuthTokens()
+
+    cy.intercept('POST', '**/api/auth/login', {
+      statusCode: 200,
+      body: tokens,
+    }).as('login')
+
+    cy.visit('/login')
+    cy.get('input[autocomplete="username"]').type('user@example.com')
+    cy.get('input[autocomplete="current-password"]').type('secret')
+    cy.contains('button', 'Sign in').click()
+
+    cy.wait('@login')
+    cy.location('pathname').should('eq', '/')
+    cy.contains('h1', 'Adventure Works').should('be.visible')
+    cy.contains('button', 'Log out').click()
+
+    cy.location('pathname').should('eq', '/login')
+    cy.contains('h2', 'Sign in').should('be.visible')
+  })
+
+  it('redirects to set-first-password after 403 and completes first login', () => {
+    const tokens = createAuthTokens()
+
+    cy.intercept('POST', '**/api/auth/login', {
+      statusCode: 403,
+      body: {},
+    }).as('loginFirstPassword')
+
+    cy.intercept('POST', '**/api/auth/set-first-password', {
+      statusCode: 200,
+      body: tokens,
+    }).as('setFirstPassword')
+
+    cy.visit('/login')
+    cy.get('input[autocomplete="username"]').type('user@example.com')
+    cy.get('input[autocomplete="current-password"]').type('secret')
+    cy.contains('button', 'Sign in').click()
+
+    cy.wait('@loginFirstPassword')
+    cy.location('pathname').should('eq', '/set-first-password')
+    cy.get('input[autocomplete="new-password"]').eq(0).type('NewSecret123!')
+    cy.get('input[autocomplete="new-password"]').eq(1).type('NewSecret123!')
+    cy.contains('button', 'Save password').click()
+
+    cy.wait('@setFirstPassword')
+    cy.location('pathname').should('eq', '/')
+    cy.contains('h1', 'Adventure Works').should('be.visible')
   })
 })

@@ -1,18 +1,13 @@
 import Alert from '@mui/material/Alert'
-import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Container from '@mui/material/Container'
-import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import { type FormEvent, useState } from 'react'
+import { type ComponentPropsWithoutRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/customFetch'
 import { useLogin } from '../api/generated/authentication/authentication'
-import { ThemeModeSwitch } from '../components/ThemeModeSwitch'
+import { AuthCard } from '../components/AuthCard'
+import { PasswordInput } from '../components/PasswordInput'
 import { toast } from '../lib/toast'
 import { useAuth } from '../lib/use-auth'
 
@@ -30,6 +25,7 @@ export function LoginPage() {
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   if (isAuthenticated) {
@@ -39,7 +35,9 @@ export function LoginPage() {
   const fromPath =
     (location.state as LocationState | null)?.from?.pathname ?? '/'
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit: NonNullable<
+    ComponentPropsWithoutRef<'form'>['onSubmit']
+  > = async (event) => {
     event.preventDefault()
     setErrorMessage(null)
 
@@ -80,56 +78,39 @@ export function LoginPage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Card>
-        <CardContent>
-          <Stack component="form" spacing={2} onSubmit={handleSubmit}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <ThemeModeSwitch />
-            </Box>
+    <AuthCard
+      title="Sign in"
+      subtitle="Use your username or email and password."
+      onSubmit={handleSubmit}
+    >
+      {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-            <Box>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Sign in
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Use your username or email and password.
-              </Typography>
-            </Box>
+      <TextField
+        label="Username or email"
+        value={identifier}
+        onChange={(event) => setIdentifier(event.target.value)}
+        required
+        fullWidth
+        autoComplete="username"
+      />
 
-            {errorMessage ? (
-              <Alert severity="error">{errorMessage}</Alert>
-            ) : null}
+      <PasswordInput
+        label="Password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        required
+        fullWidth
+        showPassword={showPassword}
+        handleClickShowPassword={() => setShowPassword((prev) => !prev)}
+      />
 
-            <TextField
-              label="Username or email"
-              value={identifier}
-              onChange={(event) => setIdentifier(event.target.value)}
-              required
-              fullWidth
-              autoComplete="username"
-            />
-
-            <TextField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              fullWidth
-              autoComplete="current-password"
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loginMutation.isPending}
-            >
-              {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
-    </Container>
+      <Button
+        type="submit"
+        variant="contained"
+        disabled={loginMutation.isPending}
+      >
+        {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+      </Button>
+    </AuthCard>
   )
 }

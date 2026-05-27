@@ -1,19 +1,14 @@
 import Alert from '@mui/material/Alert'
-import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import Container from '@mui/material/Container'
-import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import { type FormEvent, useMemo, useState } from 'react'
+import { type ComponentPropsWithoutRef, useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/customFetch'
 import { useSetFirstPassword } from '../api/generated/authentication/authentication'
 import type { HttpValidationProblemDetails } from '../api/generated/model'
-import { ThemeModeSwitch } from '../components/ThemeModeSwitch'
+import { AuthCard } from '../components/AuthCard'
+import { PasswordInput } from '../components/PasswordInput'
 import { toast } from '../lib/toast'
 import { useAuth } from '../lib/use-auth'
 
@@ -50,6 +45,7 @@ export function SetFirstPasswordPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const isMissingIdentifier = useMemo(
     () => identifier.trim().length === 0,
@@ -64,7 +60,9 @@ export function SetFirstPasswordPage() {
     return <Navigate to="/login" replace />
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit: NonNullable<
+    ComponentPropsWithoutRef<'form'>['onSubmit']
+  > = async (event) => {
     event.preventDefault()
     setErrorMessage(null)
 
@@ -117,66 +115,44 @@ export function SetFirstPasswordPage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Card>
-        <CardContent>
-          <Stack component="form" spacing={2} onSubmit={handleSubmit}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <ThemeModeSwitch />
-            </Box>
+    <AuthCard
+      title="Set your password"
+      subtitle="This account requires a password update on first sign in."
+      onSubmit={handleSubmit}
+    >
+      {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-            <Box>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Set your password
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                This account requires a password update on first sign in.
-              </Typography>
-            </Box>
+      <TextField label="Identifier" value={identifier} fullWidth disabled />
 
-            {errorMessage ? (
-              <Alert severity="error">{errorMessage}</Alert>
-            ) : null}
+      <PasswordInput
+        label="New password"
+        value={newPassword}
+        onChange={(event) => setNewPassword(event.target.value)}
+        required
+        fullWidth
+        showPassword={showPassword}
+        handleClickShowPassword={() => setShowPassword((prev) => !prev)}
+        autoComplete="new-password"
+      />
 
-            <TextField
-              label="Identifier"
-              value={identifier}
-              fullWidth
-              disabled
-            />
+      <PasswordInput
+        label="Confirm new password"
+        value={confirmNewPassword}
+        onChange={(event) => setConfirmNewPassword(event.target.value)}
+        required
+        fullWidth
+        showPassword={showPassword}
+        handleClickShowPassword={() => setShowPassword((prev) => !prev)}
+        autoComplete="new-password"
+      />
 
-            <TextField
-              label="New password"
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              required
-              fullWidth
-              autoComplete="new-password"
-            />
-
-            <TextField
-              label="Confirm new password"
-              type="password"
-              value={confirmNewPassword}
-              onChange={(event) => setConfirmNewPassword(event.target.value)}
-              required
-              fullWidth
-              autoComplete="new-password"
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={setFirstPasswordMutation.isPending}
-            >
-              {setFirstPasswordMutation.isPending
-                ? 'Saving...'
-                : 'Save password'}
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
-    </Container>
+      <Button
+        type="submit"
+        variant="contained"
+        disabled={setFirstPasswordMutation.isPending}
+      >
+        {setFirstPasswordMutation.isPending ? 'Saving...' : 'Save password'}
+      </Button>
+    </AuthCard>
   )
 }

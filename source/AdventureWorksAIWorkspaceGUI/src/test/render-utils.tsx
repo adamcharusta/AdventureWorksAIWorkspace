@@ -1,0 +1,51 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, type RenderResult } from '@testing-library/react'
+import type { ReactElement, ReactNode } from 'react'
+import { type InitialEntry, MemoryRouter } from 'react-router-dom'
+
+import { ThemeModeProvider } from '../lib/theme-mode'
+import { setAuthenticatedSession } from './factories'
+
+type RenderWithProvidersOptions = {
+  route?: string
+  initialEntries?: InitialEntry[]
+  isAuthenticated?: boolean
+}
+
+export function renderWithProviders(
+  ui: ReactElement,
+  {
+    route = '/',
+    initialEntries,
+    isAuthenticated = false,
+  }: RenderWithProvidersOptions = {},
+): RenderResult {
+  if (isAuthenticated) {
+    setAuthenticatedSession()
+  }
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  })
+
+  const entries = initialEntries ?? [route]
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ThemeModeProvider>
+        <MemoryRouter initialEntries={entries}>{ui}</MemoryRouter>
+      </ThemeModeProvider>
+    </QueryClientProvider>,
+  )
+}
+
+type RenderRoutesOptions = RenderWithProvidersOptions
+
+export function renderRoutes(
+  routes: ReactNode,
+  options?: RenderRoutesOptions,
+): RenderResult {
+  return renderWithProviders(<>{routes}</>, options)
+}
