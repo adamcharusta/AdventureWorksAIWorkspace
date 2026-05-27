@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react'
 
-import { authStore } from './auth-store'
+import { authStore } from '../lib/auth-store'
 
 export const useAuth = () => {
   const token = useSyncExternalStore(

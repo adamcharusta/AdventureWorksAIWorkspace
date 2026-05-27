@@ -3,8 +3,8 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
+import { useAuth } from '../hooks/use-auth'
 import { ensureValidSession } from '../lib/auth-service'
-import { useAuth } from '../lib/use-auth'
 
 export function RequireAuth() {
   const location = useLocation()

@@ -9,8 +9,8 @@ import { useSetFirstPassword } from '../api/generated/authentication/authenticat
 import type { HttpValidationProblemDetails } from '../api/generated/model'
 import { AuthCard } from '../components/AuthCard'
 import { PasswordInput } from '../components/PasswordInput'
+import { useAuth } from '../hooks/use-auth'
 import { toast } from '../lib/toast'
-import { useAuth } from '../lib/use-auth'
 
 type SetFirstPasswordLocationState = {
   identifier?: string

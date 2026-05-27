@@ -8,8 +8,8 @@ import { ApiError } from '../api/customFetch'
 import { useLogin } from '../api/generated/authentication/authentication'
 import { AuthCard } from '../components/AuthCard'
 import { PasswordInput } from '../components/PasswordInput'
+import { useAuth } from '../hooks/use-auth'
 import { toast } from '../lib/toast'
-import { useAuth } from '../lib/use-auth'
 
 type LocationState = {
   from?: {
