@@ -118,9 +118,37 @@ public sealed class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>
             .BeTrue();
     }
 
+    [Fact]
+    public async Task GetSwaggerDocument_ShouldDescribeHealthEndpoint()
+    {
+        using var client = factory.CreateClient();
+
+        using var document = await JsonDocument.ParseAsync(
+            await client.GetStreamAsync("/swagger/v1/swagger.json"));
+
+        document.RootElement
+            .GetProperty("paths")
+            .TryGetProperty("/health", out _)
+            .Should()
+            .BeTrue();
+    }
+
+    [Fact]
+    public async Task GetHealth_ShouldReturnHealthy()
+    {
+        using var client = factory.CreateClient();
+
+        var health = await client.GetFromJsonAsync<HealthStatus>("/health");
+
+        health.Should().NotBeNull();
+        health!.Status.Should().Be("Healthy");
+    }
+
     private sealed record WeatherForecastContract(
         DateOnly Date,
         int TemperatureC,
         int TemperatureF,
         string Summary);
+
+    private sealed record HealthStatus(string Status);
 }

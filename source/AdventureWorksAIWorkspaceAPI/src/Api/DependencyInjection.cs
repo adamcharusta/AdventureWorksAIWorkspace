@@ -1,6 +1,7 @@
 using AdventureWorksAIWorkspaceAPI.Api.ExceptionHandling;
 using AdventureWorksAIWorkspaceAPI.Api.OpenApi;
 using AdventureWorksAIWorkspaceAPI.Application;
+using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
 using Ardalis.GuardClauses;
 using Serilog;
 using Serilog.Events;
@@ -30,6 +31,7 @@ public static class DependencyInjection
 
         builder.Host.UseWolverine(options =>
         {
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IUserService>();
             options.AddApplicationServices();
         });
 
@@ -81,8 +83,6 @@ public static class DependencyInjection
 
         app.UseAuthentication();
         app.UseAuthorization();
-
-        app.MapHealthChecks("/health");
 
         app.MapWolverineEndpoints(options =>
         {
