@@ -47,6 +47,13 @@ public sealed class ApiExceptionHandler(
                 Title = "Access to the requested resource is forbidden.",
                 Detail = forbiddenException.Message
             },
+            UnauthorizedException unauthorizedException => new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Type = "https://tools.ietf.org/html/rfc9110#section-15.5.2",
+                Title = "Authentication is required to access the resource.",
+                Detail = unauthorizedException.Message
+            },
             ValidationException validationException => CreateValidationProblemDetails(validationException),
             _ => new ProblemDetails
             {

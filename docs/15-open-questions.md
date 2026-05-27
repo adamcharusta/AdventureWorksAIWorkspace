@@ -101,6 +101,24 @@ For MVP, the shared initial template password is acceptable if it is treated as 
 
 ---
 
+## Question: How should the first-login password change flow be exposed when JWT login is rejected?
+
+### Context
+
+Login rejects users whose accounts are marked as requiring a password change. They cannot obtain a normal access token, so a dedicated mechanism is needed to let them change the temporary password.
+
+### Possible Options
+
+- Return a short-lived, single-purpose password-change token alongside the rejection response, accepted only by the change-password endpoint.
+- Require the client to submit the temporary password again on the change-password endpoint, without issuing any intermediate token.
+- Send a password reset link by email and reuse the standard reset flow.
+
+### Current Assumption
+
+For MVP, the login endpoint rejects the login with a clear "password change required" response. The exact mechanism for the change-password endpoint (token vs. re-submitted credentials) is left to FR-023 implementation.
+
+---
+
 ## Question: Should Excel export be part of MVP?
 
 ### Context

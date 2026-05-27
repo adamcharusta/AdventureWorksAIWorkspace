@@ -1,6 +1,7 @@
 using AdventureWorksAIWorkspaceAPI.Api;
 using AdventureWorksAIWorkspaceAPI.Application;
 using AdventureWorksAIWorkspaceAPI.Infrastructure;
+using AdventureWorksAIWorkspaceAPI.Infrastructure.Database;
 using Serilog;
 
 try
@@ -14,6 +15,8 @@ try
     Log.Information("Starting AdventureWorksAIWorkspace API");
 
     var app = builder.Build();
+
+    await app.InitialiseDatabaseAsync();
 
     app.UseApiServices();
 

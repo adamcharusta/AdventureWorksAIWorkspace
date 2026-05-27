@@ -112,3 +112,25 @@ The system should support bootstrapping the first Admin account from secure star
 The first Admin account should be created with the configured initial template password and must be marked as requiring password change on first login.
 
 Admin bootstrap credentials must not be committed to the repository.
+
+## FR-025: JWT-Based Login
+
+The system should authenticate users by issuing a JSON Web Token (JWT) on successful login.
+
+The login endpoint should accept either user name or email as the identifier, together with the user's password.
+
+The issued access token should include the user identifier (sub), user name (name), and assigned role(s) (role) as claims, so the frontend and downstream authorization can identify the user and apply role-based rules without an additional database lookup.
+
+If the user account is marked as requiring a password change on first login, the login endpoint must not issue a normal access token. Instead it should return a response that indicates the password change requirement and routes the user through the first-login password change flow defined in FR-023.
+
+The access token signing key must not be committed to the repository and must be provided through secure configuration (User Secrets for local development, environment variables or a secret store for deployed environments).
+
+## FR-026: Refresh Token Rotation
+
+The system should issue a refresh token alongside the access token at login so the client can obtain a new access token after expiration without prompting the user to log in again.
+
+Refresh tokens should be persisted in the application database in a non-reversible form (hash), bound to the issuing user, and have an explicit expiration time.
+
+The refresh endpoint should rotate the refresh token: the presented refresh token is revoked and a new one is issued together with a new access token. Reuse of a revoked refresh token must be rejected.
+
+Refresh tokens should be revocable on logout and on password change, so existing sessions cannot continue after a security-relevant action.

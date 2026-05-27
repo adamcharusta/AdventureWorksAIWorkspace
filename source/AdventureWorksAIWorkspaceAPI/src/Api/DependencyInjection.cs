@@ -78,6 +78,9 @@ public static class DependencyInjection
             });
         }
 
+        app.UseAuthentication();
+        app.UseAuthorization();
+
         app.MapWolverineEndpoints(options =>
         {
             options.UseFluentValidationProblemDetailMiddleware();

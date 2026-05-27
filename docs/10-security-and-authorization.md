@@ -16,6 +16,39 @@ User accounts should be created by an Admin user. New users should be created wi
 
 The first Admin account should be bootstrapped through secure startup configuration so the application can be initialized without opening public registration. The first Admin account should receive the same configured initial template password rule and must change the password on first login inside the application.
 
+## JWT Authentication
+
+The API should authenticate clients using bearer JSON Web Tokens (JWT).
+
+Login flow:
+
+1. The client submits an identifier (user name or email) and a password to the login endpoint.
+2. The server validates the credentials through ASP.NET Core Identity.
+3. If the user account requires a password change on first login, the login endpoint must reject the login with a response that signals the first-login flow, and must not issue a normal access token.
+4. Otherwise the server issues a signed JWT access token together with a refresh token.
+
+Access token claims:
+
+- `sub` carries the user identifier.
+- `name` carries the user name.
+- `role` carries the assigned role names (Admin, User).
+- Standard claims such as `iss`, `aud`, `exp`, and `iat` must be present.
+
+Token signing:
+
+- Tokens must be signed with a symmetric key supplied through secure configuration.
+- The signing key must not be committed to the repository. Use User Secrets for local development and environment variables or a production secret store for deployed environments.
+- Token validation must verify issuer, audience, lifetime, and signature.
+
+Refresh tokens:
+
+- A refresh token is issued at login alongside the access token and persisted in the application database as a hash (not in plain form), associated with the issuing user.
+- The refresh endpoint accepts the refresh token, validates that it is still active, revokes it, and issues a new access token together with a new refresh token.
+- Reuse of a revoked refresh token must be rejected.
+- Refresh tokens should be revocable on logout and on password change.
+
+Access token lifetime should be short (for example minutes). Refresh token lifetime should be longer but still bounded (for example days).
+
 ## Authorization
 
 Users should only access their own reports by default.
