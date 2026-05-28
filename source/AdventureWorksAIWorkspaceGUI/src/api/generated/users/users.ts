@@ -458,3 +458,133 @@ export const useUpdateUser = <
 
   return useMutation(mutationOptions, queryClient)
 }
+/**
+ * Deletes a user account by ID. Only accessible by Admin users. Admin users cannot delete their own account.
+ * @summary Deletes an existing user account.
+ */
+export type deleteUserResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteUserResponse400 = {
+  data: HttpValidationProblemDetails
+  status: 400
+}
+
+export type deleteUserResponse401 = {
+  data: void
+  status: 401
+}
+
+export type deleteUserResponse403 = {
+  data: void
+  status: 403
+}
+
+export type deleteUserResponse404 = {
+  data: void
+  status: 404
+}
+
+export type deleteUserResponseSuccess = deleteUserResponse204 & {
+  headers: Headers
+}
+export type deleteUserResponseError = (
+  | deleteUserResponse400
+  | deleteUserResponse401
+  | deleteUserResponse403
+  | deleteUserResponse404
+) & {
+  headers: Headers
+}
+
+export type deleteUserResponse =
+  | deleteUserResponseSuccess
+  | deleteUserResponseError
+
+export const getDeleteUserUrl = (userId: string) => {
+  return `/api/users/${userId}`
+}
+
+export const deleteUser = async (
+  userId: string,
+  options?: RequestInit,
+): Promise<deleteUserResponse> => {
+  return customFetch<deleteUserResponse>(getDeleteUserUrl(userId), {
+    ...options,
+    method: 'DELETE',
+  })
+}
+
+export const getDeleteUserMutationOptions = <
+  TError = HttpValidationProblemDetails | void | void | void,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUser>>,
+    TError,
+    { userId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { userId: string },
+  TContext
+> => {
+  const mutationKey = ['deleteUser']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteUser>>,
+    { userId: string }
+  > = (props) => {
+    const { userId } = props ?? {}
+
+    return deleteUser(userId, requestOptions)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type DeleteUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteUser>>
+>
+export type DeleteUserMutationError =
+  HttpValidationProblemDetails | void | void | void
+
+/**
+ * @summary Deletes an existing user account.
+ */
+export const useDeleteUser = <
+  TError = HttpValidationProblemDetails | void | void | void,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteUser>>,
+      TError,
+      { userId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { userId: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteUserMutationOptions(options)
+
+  return useMutation(mutationOptions, queryClient)
+}

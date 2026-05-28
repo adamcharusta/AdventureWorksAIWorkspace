@@ -134,3 +134,11 @@ Refresh tokens should be persisted in the application database in a non-reversib
 The refresh endpoint should rotate the refresh token: the presented refresh token is revoked and a new one is issued together with a new access token. Reuse of a revoked refresh token must be rejected.
 
 Refresh tokens should be revocable on logout and on password change, so existing sessions cannot continue after a security-relevant action.
+
+## FR-027: Admin User Deletion
+
+Admin users should be able to delete user accounts from the admin panel.
+
+Only users with the Admin role may delete user accounts.
+
+The system must prevent an authenticated Admin user from deleting their own account.

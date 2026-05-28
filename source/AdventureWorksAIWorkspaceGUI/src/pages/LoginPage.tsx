@@ -6,8 +6,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/customFetch'
 import { useLogin } from '../api/generated/authentication/authentication'
-import { AuthCard } from '../components/AuthCard'
-import { PasswordInput } from '../components/PasswordInput'
+import { AuthCard } from '../components/auth/AuthCard'
+import { PasswordInput } from '../components/auth/PasswordInput'
 import { useAuth } from '../hooks/use-auth'
 import { toast } from '../lib/toast'
 

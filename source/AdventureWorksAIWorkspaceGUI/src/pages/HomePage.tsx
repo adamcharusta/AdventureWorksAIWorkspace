@@ -1,5 +1,14 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
+import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded'
+import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded'
+import FolderRoundedIcon from '@mui/icons-material/FolderRounded'
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
+import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded'
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
+import StarRoundedIcon from '@mui/icons-material/StarRounded'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
@@ -7,23 +16,61 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { ChatDrawer } from '../components/ChatDrawer'
-import { MenuDrawer } from '../components/MenuDrawer'
-import { ThemeModeSwitch } from '../components/ThemeModeSwitch'
+import { ChatDrawer } from '../components/workspace/ChatDrawer'
+import {
+  MenuDrawer,
+  type MenuDrawerItem,
+} from '../components/workspace/MenuDrawer'
 import { useAuth } from '../hooks/use-auth'
+import { useThemeMode } from '../hooks/use-theme-mode'
+import { isAdminRole } from '../lib/auth-roles'
 import { toast } from '../lib/toast'
+
+const reportItems: MenuDrawerItem[] = [
+  { label: 'Workspace', icon: <DashboardRoundedIcon />, selected: true },
+  { label: 'Recent reports', icon: <HistoryRoundedIcon /> },
+  { label: 'Saved reports', icon: <FolderRoundedIcon /> },
+  { label: 'Favorite reports', icon: <StarRoundedIcon /> },
+  { label: 'Search reports', icon: <SearchRoundedIcon /> },
+]
 
 const HomePage = () => {
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { username, role, logout } = useAuth()
+  const { mode, toggleMode } = useThemeMode()
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(true)
   const [isMenuOpen, setIsMenuOpen] = useState(true)
+
+  const isAdmin = isAdminRole(role)
 
   const handleLogout = () => {
     logout()
     toast.info('Your session has been closed.', 'Signed out')
     navigate('/login', { replace: true })
   }
+
+  const bottomItems: MenuDrawerItem[] = [
+    ...(isAdmin
+      ? [
+          {
+            label: 'Admin Panel',
+            icon: <AdminPanelSettingsIcon />,
+            onClick: () => navigate('/admin'),
+          },
+        ]
+      : []),
+    {
+      label: 'Toggle theme',
+      icon:
+        mode === 'dark' ? <LightModeRoundedIcon /> : <DarkModeRoundedIcon />,
+      onClick: toggleMode,
+    },
+    {
+      label: 'Log out',
+      icon: <LogoutRoundedIcon />,
+      onClick: handleLogout,
+    },
+  ]
 
   return (
     <Box
@@ -35,9 +82,12 @@ const HomePage = () => {
       }}
     >
       <MenuDrawer
+        bottomItems={bottomItems}
+        items={reportItems}
         open={isMenuOpen}
         onToggle={() => setIsMenuOpen((current) => !current)}
-        onLogout={handleLogout}
+        title={`Hello ${username ?? 'there'}!`}
+        subtitle="Generate insights and reports"
       />
 
       <Box
@@ -81,7 +131,6 @@ const HomePage = () => {
                 justifyContent: { xs: 'space-between', sm: 'flex-end' },
               }}
             >
-              <ThemeModeSwitch />
               <Button startIcon={<AddRoundedIcon />} variant="contained">
                 New report
               </Button>

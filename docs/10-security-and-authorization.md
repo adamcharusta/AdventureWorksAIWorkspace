@@ -14,6 +14,8 @@ Public self-registration should not be available in the MVP.
 
 User accounts should be created by an Admin user. New users should be created with the configured initial template password and forced to change it during the first login flow before accessing the main application.
 
+Admin users may delete other user accounts, but the API must prevent an authenticated Admin from deleting their own account.
+
 The first Admin account should be bootstrapped through secure startup configuration so the application can be initialized without opening public registration. The first Admin account should receive the same configured initial template password rule and must change the password on first login inside the application.
 
 ## JWT Authentication
@@ -86,6 +88,8 @@ The preferred user provisioning flow is:
 This flow applies to regular User accounts and to Admin accounts created by an existing Admin.
 
 For security, temporary passwords must require immediate change on first login.
+
+When an Admin deletes a user account, the action should be restricted to non-current accounts so the active administrator cannot remove their own access.
 
 For MVP, the configured initial template password may be shared across pre-provisioned accounts, including the first Admin account. It must be provided through secure configuration and treated as a secret.
 
@@ -172,6 +176,7 @@ Secrets must not be committed to the repository.
 The system should consider logging:
 
 - User creation.
+- User deletion.
 - Role assignment changes.
 - Account activation and deactivation.
 - First login password change completion.

@@ -133,8 +133,20 @@ export const getUpdateUserMockHandler = (
     options,
   )
 }
+export const getDeleteUserMockHandler = (options?: RequestHandlerOptions) => {
+  return http.delete(
+    '*/api/users/:userId',
+    async () => {
+      await delay(0)
+
+      return new HttpResponse(null, { status: 204 })
+    },
+    options,
+  )
+}
 export const getUsersMock = () => [
   getGetUsersMockHandler(),
   getCreateUserMockHandler(),
   getUpdateUserMockHandler(),
+  getDeleteUserMockHandler(),
 ]

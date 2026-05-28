@@ -20,5 +20,9 @@ public interface IUserService
     Task<UpdateUserResult> UpdateUserAsync(UpdateUserCommand command,
         CancellationToken cancellationToken = default);
 
+    Task<DeleteUserResult> DeleteUserAsync(string userId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<UserDto>> GetUsersAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> GetAssignableRolesAsync(CancellationToken cancellationToken = default);
 }

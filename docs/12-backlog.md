@@ -74,6 +74,7 @@ This document contains the initial product backlog for AdventureWorksAIWorkspace
 - [ ] Define Admin and User role authorization rules.
 - [ ] Define closed registration behavior.
 - [ ] Define Admin-managed user provisioning flow.
+- [ ] Define Admin-managed user deletion and self-delete protection.
 - [ ] Define configured initial template password strategy.
 - [ ] Define forced first login password change flow.
 - [ ] Define initial Admin bootstrap strategy.

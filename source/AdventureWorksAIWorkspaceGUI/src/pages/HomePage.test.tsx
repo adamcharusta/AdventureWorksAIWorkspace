@@ -21,13 +21,17 @@ describe('<HomePage />', () => {
     await user.click(collapseMenuButton)
     await user.click(collapseChatButton)
 
-    expect(screen.getByRole('button', { name: /expand menu/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /expand menu/i }),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /expand chat drawer/i }),
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /expand menu/i }))
-    await user.click(screen.getByRole('button', { name: /expand chat drawer/i }))
+    await user.click(
+      screen.getByRole('button', { name: /expand chat drawer/i }),
+    )
 
     expect(
       screen.getByRole('button', { name: /collapse menu/i }),

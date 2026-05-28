@@ -1,15 +1,27 @@
+import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded'
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import { renderWithProviders } from '../test/render-utils'
+import { renderWithProviders } from '../../test/render-utils'
 import { ChatDrawer } from './ChatDrawer'
 import { MenuDrawer } from './MenuDrawer'
+
+const drawerItems = [
+  { label: 'Workspace', icon: <DashboardRoundedIcon />, selected: true },
+]
 
 describe('<MenuDrawer />', () => {
   it('renders collapse control when drawer is open', () => {
     renderWithProviders(
-      <MenuDrawer open onToggle={() => undefined} onLogout={() => undefined} />,
+      <MenuDrawer
+        items={drawerItems}
+        open
+        onToggle={() => undefined}
+        title="Main menu"
+        subtitle="Reports"
+      />,
     )
 
     expect(
@@ -20,21 +32,40 @@ describe('<MenuDrawer />', () => {
   it('renders expand control when drawer is collapsed', () => {
     renderWithProviders(
       <MenuDrawer
+        items={drawerItems}
         open={false}
         onToggle={() => undefined}
-        onLogout={() => undefined}
+        title="Main menu"
+        subtitle="Reports"
       />,
     )
 
-    expect(screen.getByRole('button', { name: /expand menu/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /expand menu/i }),
+    ).toBeInTheDocument()
   })
 
-  it('calls onToggle and onLogout actions', async () => {
+  it('calls onToggle and bottom item actions', async () => {
     const user = userEvent.setup()
     const onToggle = vi.fn()
     const onLogout = vi.fn()
 
-    renderWithProviders(<MenuDrawer open onToggle={onToggle} onLogout={onLogout} />)
+    renderWithProviders(
+      <MenuDrawer
+        bottomItems={[
+          {
+            label: 'Log out',
+            icon: <LogoutRoundedIcon />,
+            onClick: onLogout,
+          },
+        ]}
+        items={drawerItems}
+        open
+        onToggle={onToggle}
+        title="Main menu"
+        subtitle="Reports"
+      />,
+    )
 
     await user.click(screen.getByRole('button', { name: /collapse menu/i }))
     await user.click(screen.getByRole('button', { name: /log out/i }))
@@ -64,7 +95,9 @@ describe('<ChatDrawer />', () => {
 
     renderWithProviders(<ChatDrawer open={false} onToggle={onToggle} />)
 
-    await user.click(screen.getByRole('button', { name: /expand chat drawer/i }))
+    await user.click(
+      screen.getByRole('button', { name: /expand chat drawer/i }),
+    )
 
     expect(onToggle).toHaveBeenCalledTimes(1)
   })

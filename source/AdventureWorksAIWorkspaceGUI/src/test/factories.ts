@@ -6,21 +6,32 @@ import type {
 const AUTH_TOKEN_KEY = 'auth_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
 
-export function createValidJwtToken() {
-  // header: {"alg":"HS256","typ":"JWT"}
-  // payload: {"exp":4102444800} // far-future expiry for test stability
-  return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMDI0NDQ4MDB9.signature'
+function encodeBase64Url(value: Record<string, unknown>) {
+  return btoa(JSON.stringify(value))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '')
 }
 
-export function createAuthSession() {
+export function createValidJwtToken(claims: Record<string, unknown> = {}) {
+  const header = encodeBase64Url({ alg: 'HS256', typ: 'JWT' })
+  const payload = encodeBase64Url({
+    ...claims,
+    exp: 4102444800,
+  })
+
+  return `${header}.${payload}.signature`
+}
+
+export function createAuthSession(claims: Record<string, unknown> = {}) {
   return {
-    accessToken: createValidJwtToken(),
+    accessToken: createValidJwtToken(claims),
     refreshToken: 'refresh-token',
   }
 }
 
-export function setAuthenticatedSession() {
-  const session = createAuthSession()
+export function setAuthenticatedSession(claims: Record<string, unknown> = {}) {
+  const session = createAuthSession(claims)
   localStorage.setItem(AUTH_TOKEN_KEY, session.accessToken)
   localStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken)
   return session

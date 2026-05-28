@@ -194,6 +194,28 @@ public class UserService(
         return new UpdateUserResult(UpdateUserOutcome.Success, user.Id, user.UserName, user.Email, currentRole);
     }
 
+    public async Task<DeleteUserResult> DeleteUserAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        ApplicationUser? user = await userManager.FindByIdAsync(userId);
+
+        if (user is null)
+        {
+            return new DeleteUserResult(DeleteUserOutcome.UserNotFound);
+        }
+
+        await RevokeAllRefreshTokensAsync(user.Id, cancellationToken);
+
+        IdentityResult deleteResult = await userManager.DeleteAsync(user);
+
+        if (!deleteResult.Succeeded)
+        {
+            var errors = deleteResult.Errors.Select(e => e.Description).ToList();
+            return new DeleteUserResult(DeleteUserOutcome.DeleteFailed, errors);
+        }
+
+        return new DeleteUserResult(DeleteUserOutcome.Success);
+    }
+
     public async Task<AuthTokens?> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(refreshToken))
@@ -233,6 +255,16 @@ public class UserService(
         }
 
         return result;
+    }
+
+    public async Task<IReadOnlyList<string>> GetAssignableRolesAsync(CancellationToken cancellationToken = default)
+    {
+        return await roleManager.Roles
+            .Select(role => role.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .OrderBy(name => name)
+            .Select(name => name!)
+            .ToListAsync(cancellationToken);
     }
 
     private async Task<AuthTokens> IssueTokensAsync(ApplicationUser user, CancellationToken cancellationToken)

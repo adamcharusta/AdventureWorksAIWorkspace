@@ -1,4 +1,7 @@
+using System.Security.Claims;
 using AdventureWorksAIWorkspaceAPI.Application.User.CreateUser;
+using AdventureWorksAIWorkspaceAPI.Application.User.DeleteUser;
+using AdventureWorksAIWorkspaceAPI.Application.User.GetAssignableRoles;
 using AdventureWorksAIWorkspaceAPI.Application.User.GetUsers;
 using AdventureWorksAIWorkspaceAPI.Application.User.UpdateUser;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +14,28 @@ namespace AdventureWorksAIWorkspaceAPI.Api.Endpoints;
 
 public static class UserEndpoints
 {
+    private const string SubjectClaimType = "sub";
+
+    [WolverineGet(
+        "/api/users/roles",
+        Name = "GetAssignableRoles",
+        OperationId = "GetAssignableRoles",
+        Summary = "Returns assignable user roles.",
+        Description = "Returns all roles that can be assigned to users. Only accessible by Admin users.")]
+    [Tags("Users")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType<GetAssignableRolesResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public static async Task<Ok<GetAssignableRolesResponse>> GetAssignableRoles(
+        IMessageBus messageBus,
+        CancellationToken cancellationToken)
+    {
+        GetAssignableRolesResponse response =
+            await messageBus.InvokeAsync<GetAssignableRolesResponse>(new GetAssignableRolesQuery(), cancellationToken);
+        return TypedResults.Ok(response);
+    }
+
     [WolverineGet(
         "/api/users",
         Name = "GetUsers",
@@ -78,5 +103,32 @@ public static class UserEndpoints
         UpdateUserResponse response =
             await messageBus.InvokeAsync<UpdateUserResponse>(commandWithId, cancellationToken);
         return TypedResults.Ok(response);
+    }
+
+    [WolverineDelete(
+        "/api/users/{userId}",
+        Name = "DeleteUser",
+        OperationId = "DeleteUser",
+        Summary = "Deletes an existing user account.",
+        Description =
+            "Deletes a user account by ID. Only accessible by Admin users. Admin users cannot delete their own account.")]
+    [Tags("Users")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public static async Task<NoContent> DeleteUser(
+        string userId,
+        HttpContext httpContext,
+        IMessageBus messageBus,
+        CancellationToken cancellationToken)
+    {
+        string? currentUserId = httpContext.User.FindFirstValue(SubjectClaimType)
+            ?? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        await messageBus.InvokeAsync(new DeleteUserCommand(userId, currentUserId), cancellationToken);
+        return TypedResults.NoContent();
     }
 }

@@ -14,6 +14,7 @@ export class ApiError extends Error {
 }
 
 type CustomFetchOptions = RequestInit & {
+  clearSessionOnUnauthorized?: boolean
   skipAuthRefresh?: boolean
 }
 
@@ -30,13 +31,14 @@ export const customFetch = async <T>(
   url: string,
   options?: CustomFetchOptions,
 ): Promise<T> => {
+  const clearSessionOnUnauthorized = options?.clearSessionOnUnauthorized ?? true
+
   const runRequest = async () => {
     const headers = new Headers(options?.headers || {})
 
-    // Inject JWT token if available
-    const token = authStore.getToken()
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`)
+    const authorizationHeader = authStore.getAuthorizationHeader()
+    if (authorizationHeader) {
+      headers.set('Authorization', authorizationHeader)
     }
 
     // Set default content type for JSON if not already set
@@ -57,7 +59,9 @@ export const customFetch = async <T>(
     !options?.skipAuthRefresh &&
     !isAuthEndpoint(url)
   ) {
-    const refreshed = await refreshSession()
+    const refreshed = await refreshSession({
+      clearSessionOnFailure: clearSessionOnUnauthorized,
+    })
 
     if (refreshed) {
       response = await runRequest()
@@ -70,7 +74,7 @@ export const customFetch = async <T>(
   const parsedBody: unknown = rawBody ? safeJsonParse(rawBody) : undefined
 
   // Handle 401 Unauthorized - clear tokens on auth failure
-  if (response.status === 401) {
+  if (response.status === 401 && clearSessionOnUnauthorized) {
     authStore.clearTokens()
   }
 

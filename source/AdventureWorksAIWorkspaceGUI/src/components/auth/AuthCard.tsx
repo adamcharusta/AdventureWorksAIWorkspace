@@ -6,7 +6,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 
-import { ThemeModeSwitch } from './ThemeModeSwitch'
+import { ThemeModeSwitch } from '../theme/ThemeModeSwitch'
 
 type AuthCardProps = {
   title: string

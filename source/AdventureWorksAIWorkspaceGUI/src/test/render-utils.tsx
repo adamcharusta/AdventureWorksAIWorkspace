@@ -7,6 +7,7 @@ import { ThemeModeProvider } from '../lib/theme-mode'
 import { setAuthenticatedSession } from './factories'
 
 type RenderWithProvidersOptions = {
+  authClaims?: Record<string, unknown>
   route?: string
   initialEntries?: InitialEntry[]
   isAuthenticated?: boolean
@@ -15,13 +16,14 @@ type RenderWithProvidersOptions = {
 export function renderWithProviders(
   ui: ReactElement,
   {
+    authClaims,
     route = '/',
     initialEntries,
     isAuthenticated = false,
   }: RenderWithProvidersOptions = {},
 ): RenderResult {
   if (isAuthenticated) {
-    setAuthenticatedSession()
+    setAuthenticatedSession(authClaims)
   }
 
   const queryClient = new QueryClient({

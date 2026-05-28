@@ -5,6 +5,10 @@ type RefreshResponseBody = {
   refreshToken: string
 }
 
+type RefreshSessionOptions = {
+  clearSessionOnFailure?: boolean
+}
+
 let refreshPromise: Promise<boolean> | null = null
 
 function isRefreshResponseBody(value: unknown): value is RefreshResponseBody {
@@ -27,29 +31,48 @@ function parseJson(raw: string): unknown {
   }
 }
 
-async function executeRefresh(): Promise<boolean> {
+function createRefreshHeaders(): Headers {
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  const authorizationHeader = authStore.getAuthorizationHeader()
+
+  if (authorizationHeader) {
+    headers.set('Authorization', authorizationHeader)
+  }
+
+  return headers
+}
+
+function clearTokensIfNeeded(clearSessionOnFailure: boolean) {
+  if (clearSessionOnFailure) {
+    authStore.clearTokens()
+  }
+}
+
+async function executeRefresh({
+  clearSessionOnFailure = true,
+}: RefreshSessionOptions = {}): Promise<boolean> {
   const refreshToken = authStore.getRefreshToken()
 
   if (!refreshToken) {
-    authStore.clearTokens()
+    clearTokensIfNeeded(clearSessionOnFailure)
     return false
   }
 
   const response = await fetch('/api/auth/refresh', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: createRefreshHeaders(),
     body: JSON.stringify({ refreshToken }),
   })
 
   if (!response.ok) {
-    authStore.clearTokens()
+    clearTokensIfNeeded(clearSessionOnFailure)
     return false
   }
 
   const body = parseJson(await response.text())
 
   if (!isRefreshResponseBody(body)) {
-    authStore.clearTokens()
+    clearTokensIfNeeded(clearSessionOnFailure)
     return false
   }
 
@@ -58,9 +81,11 @@ async function executeRefresh(): Promise<boolean> {
   return true
 }
 
-export async function refreshSession(): Promise<boolean> {
+export async function refreshSession(
+  options?: RefreshSessionOptions,
+): Promise<boolean> {
   if (!refreshPromise) {
-    refreshPromise = executeRefresh().finally(() => {
+    refreshPromise = executeRefresh(options).finally(() => {
       refreshPromise = null
     })
   }

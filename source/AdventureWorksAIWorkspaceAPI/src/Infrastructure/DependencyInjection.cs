@@ -70,7 +70,13 @@ public static class DependencyInjection
         Guard.Against.NullOrWhiteSpace(jwtOptions.Audience, $"{JwtOptions.SectionName}:{nameof(JwtOptions.Audience)}");
         Guard.Against.NullOrWhiteSpace(jwtOptions.SigningKey, $"{JwtOptions.SectionName}:{nameof(JwtOptions.SigningKey)}");
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultForbidScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters

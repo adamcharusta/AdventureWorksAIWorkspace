@@ -60,3 +60,11 @@ export const updateUserResponse = zod.object({
   email: zod.string(),
   role: zod.string(),
 })
+
+/**
+ * Deletes a user account by ID. Only accessible by Admin users. Admin users cannot delete their own account.
+ * @summary Deletes an existing user account.
+ */
+export const deleteUserParams = zod.object({
+  userId: zod.string(),
+})

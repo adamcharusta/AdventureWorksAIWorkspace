@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom'
 
-import { RequireAuth } from './components/RequireAuth'
+import { RequireAdmin } from './components/auth/RequireAdmin'
+import { RequireAuth } from './components/auth/RequireAuth'
+import AdminPanelPage from './pages/AdminPanelPage'
 import HomePage from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -14,6 +16,9 @@ function App() {
 
       <Route element={<RequireAuth />}>
         <Route path="/" element={<HomePage />} />
+        <Route element={<RequireAdmin />}>
+          <Route path="/admin" element={<AdminPanelPage />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

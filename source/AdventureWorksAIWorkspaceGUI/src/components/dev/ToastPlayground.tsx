@@ -4,7 +4,7 @@ import CardContent from '@mui/material/CardContent'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import { toast } from '../lib/toast'
+import { toast } from '../../lib/toast'
 
 export function ToastPlayground() {
   return (

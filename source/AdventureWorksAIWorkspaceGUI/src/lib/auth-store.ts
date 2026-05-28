@@ -10,6 +10,15 @@ type AuthListener = () => void
 
 const listeners = new Set<AuthListener>()
 
+function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+function getAuthorizationHeader(): string | null {
+  const token = getStoredToken()
+  return token ? `Bearer ${token}` : null
+}
+
 function notifyAuthChanged() {
   listeners.forEach((listener) => listener())
   if (typeof window !== 'undefined') {
@@ -37,9 +46,9 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 }
 
 export const authStore = {
-  getToken: (): string | null => {
-    return localStorage.getItem(TOKEN_KEY)
-  },
+  getToken: getStoredToken,
+
+  getAuthorizationHeader,
 
   setToken: (token: string): void => {
     localStorage.setItem(TOKEN_KEY, token)
