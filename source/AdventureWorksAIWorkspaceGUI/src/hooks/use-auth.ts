@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react'
 
-import { authStore } from '../lib/auth-store'
+import { authStore } from '@/lib/auth-store'
+import { decodeJwtPayload } from '@/lib/jwt'
 
 const ROLE_CLAIM_KEYS = [
   'role',
@@ -20,25 +21,6 @@ const USER_ID_CLAIM_KEYS = [
   'nameid',
   'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier',
 ] as const
-
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) {
-      return null
-    }
-
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-    const padded = base64.padEnd(
-      base64.length + ((4 - (base64.length % 4)) % 4),
-      '=',
-    )
-
-    return JSON.parse(atob(padded)) as Record<string, unknown>
-  } catch {
-    return null
-  }
-}
 
 function getClaimValue(
   payload: Record<string, unknown>,

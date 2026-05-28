@@ -2,8 +2,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, type RenderResult } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { type InitialEntry, MemoryRouter } from 'react-router-dom'
+import { Toaster } from 'sonner'
 
-import { ThemeModeProvider } from '../lib/theme-mode'
+import { ThemeModeProvider } from '@/lib/theme-mode'
+
 import { setAuthenticatedSession } from './factories'
 
 type RenderWithProvidersOptions = {
@@ -38,6 +40,7 @@ export function renderWithProviders(
     <QueryClientProvider client={queryClient}>
       <ThemeModeProvider>
         <MemoryRouter initialEntries={entries}>{ui}</MemoryRouter>
+        <Toaster />
       </ThemeModeProvider>
     </QueryClientProvider>,
   )

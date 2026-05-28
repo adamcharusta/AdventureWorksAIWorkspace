@@ -3,7 +3,7 @@ import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 
-import { useThemeMode } from '../../hooks/use-theme-mode'
+import { useThemeMode } from '@/hooks/use-theme-mode'
 
 export function ThemeModeSwitch() {
   const { mode, toggleMode } = useThemeMode()

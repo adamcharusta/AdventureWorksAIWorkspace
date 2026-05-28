@@ -1,6 +1,7 @@
 /**
  * Simple auth store for managing JWT tokens
  */
+import { decodeJwtPayload } from './jwt'
 
 const TOKEN_KEY = 'auth_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
@@ -23,25 +24,6 @@ function notifyAuthChanged() {
   listeners.forEach((listener) => listener())
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(AUTH_CHANGED_EVENT))
-  }
-}
-
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) {
-      return null
-    }
-
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-    const padded = base64.padEnd(
-      base64.length + ((4 - (base64.length % 4)) % 4),
-      '=',
-    )
-    const payload = atob(padded)
-    return JSON.parse(payload) as Record<string, unknown>
-  } catch {
-    return null
   }
 }
 

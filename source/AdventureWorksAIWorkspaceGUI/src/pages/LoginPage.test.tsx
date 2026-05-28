@@ -4,9 +4,10 @@ import { http, HttpResponse } from 'msw'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
-import { createLoginResponse } from '../test/factories'
-import { renderWithProviders } from '../test/render-utils'
-import { server } from '../test/server'
+import { createLoginResponse } from '@/test/factories'
+import { renderWithProviders } from '@/test/render-utils'
+import { server } from '@/test/server'
+
 import { LoginPage } from './LoginPage'
 
 function renderLoginPage({

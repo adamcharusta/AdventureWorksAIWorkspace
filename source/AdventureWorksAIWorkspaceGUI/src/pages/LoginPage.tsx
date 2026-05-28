@@ -1,15 +1,14 @@
-import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import { type ComponentPropsWithoutRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
-import { ApiError } from '../api/customFetch'
-import { useLogin } from '../api/generated/authentication/authentication'
-import { AuthCard } from '../components/auth/AuthCard'
-import { PasswordInput } from '../components/auth/PasswordInput'
-import { useAuth } from '../hooks/use-auth'
-import { toast } from '../lib/toast'
+import { ApiError } from '@/api/customFetch'
+import { useLogin } from '@/api/generated/authentication/authentication'
+import { AuthCard } from '@/components/auth/AuthCard'
+import { PasswordInput } from '@/components/auth/PasswordInput'
+import { useAuth } from '@/hooks/use-auth'
+import { toast } from '@/lib/toast'
 
 type LocationState = {
   from?: {
@@ -26,7 +25,6 @@ export function LoginPage() {
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />
@@ -39,7 +37,6 @@ export function LoginPage() {
     ComponentPropsWithoutRef<'form'>['onSubmit']
   > = async (event) => {
     event.preventDefault()
-    setErrorMessage(null)
 
     try {
       const response = await loginMutation.mutateAsync({
@@ -48,11 +45,14 @@ export function LoginPage() {
 
       if (response.status !== 200) {
         if (response.status === 401) {
-          setErrorMessage('Invalid credentials. Please try again.')
+          toast.error('Invalid credentials. Please try again.', 'Sign in')
           return
         }
 
-        setErrorMessage('Unable to sign in right now. Please try again later.')
+        toast.error(
+          'Unable to sign in right now. Please try again later.',
+          'Sign in',
+        )
         return
       }
 
@@ -61,7 +61,7 @@ export function LoginPage() {
       navigate(fromPath, { replace: true })
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        setErrorMessage('Invalid credentials. Please try again.')
+        toast.error('Invalid credentials. Please try again.', 'Sign in')
         return
       }
 
@@ -73,7 +73,10 @@ export function LoginPage() {
         return
       }
 
-      setErrorMessage('Unable to sign in right now. Please try again later.')
+      toast.error(
+        'Unable to sign in right now. Please try again later.',
+        'Sign in',
+      )
     }
   }
 
@@ -83,8 +86,6 @@ export function LoginPage() {
       subtitle="Use your username or email and password."
       onSubmit={handleSubmit}
     >
-      {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
-
       <TextField
         label="Username or email"
         value={identifier}

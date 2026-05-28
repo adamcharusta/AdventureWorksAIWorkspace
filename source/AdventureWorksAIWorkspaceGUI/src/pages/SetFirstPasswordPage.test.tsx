@@ -4,9 +4,10 @@ import { http, HttpResponse } from 'msw'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
-import { createSetFirstPasswordResponse } from '../test/factories'
-import { renderWithProviders } from '../test/render-utils'
-import { server } from '../test/server'
+import { createSetFirstPasswordResponse } from '@/test/factories'
+import { renderWithProviders } from '@/test/render-utils'
+import { server } from '@/test/server'
+
 import { SetFirstPasswordPage } from './SetFirstPasswordPage'
 
 function renderSetFirstPasswordPage({

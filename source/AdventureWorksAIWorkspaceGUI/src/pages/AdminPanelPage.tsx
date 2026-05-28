@@ -6,36 +6,39 @@ import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useState } from 'react'
+import { type SubmitEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { customFetch } from '../api/customFetch'
-import type { UserDto } from '../api/generated/model'
+import { customFetch } from '@/api/customFetch'
+import type { UserDto } from '@/api/generated/model'
 import {
   getGetUsersQueryKey,
   useCreateUser,
   useDeleteUser,
   useGetUsers,
   useUpdateUser,
-} from '../api/generated/users/users'
-import { AdminCreateUserForm } from '../components/admin-panel/AdminCreateUserForm'
+} from '@/api/generated/users/users'
+import type {
+  CreateUserFormState,
+  EditUserFormState,
+  GetAssignableRolesApiResponse,
+} from '@/components/admin-panel/admin-panel-types'
 import {
   adminRequestOptions,
-  type CreateUserFormState,
-  type EditUserFormState,
   emptyRoles,
-  type GetAssignableRolesApiResponse,
   getCreateRoleValue,
   getRoleOptions,
   initialCreateForm,
   initialEditForm,
-} from '../components/admin-panel/adminPanelTypes'
-import { AdminUsersSection } from '../components/admin-panel/AdminUsersSection'
-import { DeleteUserDialog } from '../components/admin-panel/DeleteUserDialog'
-import { EditUserDialog } from '../components/admin-panel/EditUserDialog'
-import { ThemeModeSwitch } from '../components/theme/ThemeModeSwitch'
-import { useAuth } from '../hooks/use-auth'
-import { toast } from '../lib/toast'
+} from '@/components/admin-panel/admin-panel-utils'
+import { AdminCreateUserForm } from '@/components/admin-panel/AdminCreateUserForm'
+import { AdminUsersSection } from '@/components/admin-panel/AdminUsersSection'
+import { DeleteUserDialog } from '@/components/admin-panel/DeleteUserDialog'
+import { EditUserDialog } from '@/components/admin-panel/EditUserDialog'
+import { ThemeModeSwitch } from '@/components/theme/ThemeModeSwitch'
+import { useAuth } from '@/hooks/use-auth'
+import { getApiErrorMessage } from '@/lib/api-error'
+import { toast } from '@/lib/toast'
 
 const AdminPanelPage = () => {
   const navigate = useNavigate()
@@ -72,8 +75,11 @@ const AdminPanelPage = () => {
         toast.success('User account has been created.', 'Admin panel')
         void queryClient.invalidateQueries({ queryKey: getGetUsersQueryKey() })
       },
-      onError: () => {
-        toast.error('The user account could not be created.', 'Admin panel')
+      onError: (error) => {
+        toast.error(
+          getApiErrorMessage(error, 'The user account could not be created.'),
+          'Admin panel',
+        )
       },
     },
     request: adminRequestOptions,
@@ -87,8 +93,11 @@ const AdminPanelPage = () => {
         toast.success('User account has been updated.', 'Admin panel')
         void queryClient.invalidateQueries({ queryKey: getGetUsersQueryKey() })
       },
-      onError: () => {
-        toast.error('The user account could not be updated.', 'Admin panel')
+      onError: (error) => {
+        toast.error(
+          getApiErrorMessage(error, 'The user account could not be updated.'),
+          'Admin panel',
+        )
       },
     },
     request: adminRequestOptions,
@@ -101,8 +110,11 @@ const AdminPanelPage = () => {
         toast.success('User account has been deleted.', 'Admin panel')
         void queryClient.invalidateQueries({ queryKey: getGetUsersQueryKey() })
       },
-      onError: () => {
-        toast.error('The user account could not be deleted.', 'Admin panel')
+      onError: (error) => {
+        toast.error(
+          getApiErrorMessage(error, 'The user account could not be deleted.'),
+          'Admin panel',
+        )
       },
     },
     request: adminRequestOptions,
@@ -149,7 +161,7 @@ const AdminPanelPage = () => {
     }))
   }
 
-  const handleCreateUser = (event: FormEvent<HTMLFormElement>) => {
+  const handleCreateUser = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     createUserMutation.mutate({
       data: {
@@ -177,7 +189,7 @@ const AdminPanelPage = () => {
     }
   }
 
-  const handleUpdateUser = (event: FormEvent<HTMLFormElement>) => {
+  const handleUpdateUser = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     if (!editingUser) {

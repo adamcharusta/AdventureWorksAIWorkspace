@@ -7,13 +7,13 @@ import DialogTitle from '@mui/material/DialogTitle'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 
 import type {
   EditUserFormState,
   FormFieldChangeHandler,
   RoleFieldState,
-} from './adminPanelTypes'
+} from './admin-panel-types'
 import { RoleSelectField } from './RoleSelectField'
 
 type EditUserDialogProps = {
@@ -21,7 +21,7 @@ type EditUserDialogProps = {
   isSaving: boolean
   onChange: FormFieldChangeHandler<EditUserFormState>
   onClose: () => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void
   open: boolean
   roleFieldState: RoleFieldState
   roleOptions: string[]

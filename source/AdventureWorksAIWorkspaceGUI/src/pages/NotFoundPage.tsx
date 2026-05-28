@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { Link as RouterLink } from 'react-router-dom'
 
-import { ThemeModeSwitch } from '../components/theme/ThemeModeSwitch'
+import { ThemeModeSwitch } from '@/components/theme/ThemeModeSwitch'
 
 export function NotFoundPage() {
   return (

@@ -1,8 +1,9 @@
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import { authStore } from '../lib/auth-store'
-import { server } from '../test/server'
+import { authStore } from '@/lib/auth-store'
+import { server } from '@/test/server'
+
 import { customFetch } from './customFetch'
 
 describe('customFetch', () => {

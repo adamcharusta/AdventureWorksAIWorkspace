@@ -2,7 +2,8 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
-import { renderWithProviders } from '../test/render-utils'
+import { renderWithProviders } from '@/test/render-utils'
+
 import HomePage from './HomePage'
 
 describe('<HomePage />', () => {

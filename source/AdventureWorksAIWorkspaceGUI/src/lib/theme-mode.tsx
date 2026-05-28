@@ -6,7 +6,8 @@ import {
 } from '@mui/material/styles'
 import { type ReactNode, useCallback, useMemo, useState } from 'react'
 
-import { getGlobalStyleOverrides } from '../styles/global-styles'
+import { getGlobalStyleOverrides } from '@/styles/global-styles'
+
 import { ThemeModeContext } from './theme-mode-context'
 
 const THEME_MODE_KEY = 'theme_mode'

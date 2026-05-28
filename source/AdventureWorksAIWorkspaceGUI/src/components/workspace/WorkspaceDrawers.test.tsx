@@ -4,7 +4,8 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import { renderWithProviders } from '../../test/render-utils'
+import { renderWithProviders } from '@/test/render-utils'
+
 import { ChatDrawer } from './ChatDrawer'
 import { MenuDrawer } from './MenuDrawer'
 

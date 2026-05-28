@@ -7,9 +7,10 @@ import type {
   CreateUserCommand,
   UpdateUserCommand,
   UserDto,
-} from '../api/generated/model'
-import { renderWithProviders } from '../test/render-utils'
-import { server } from '../test/server'
+} from '@/api/generated/model'
+import { renderWithProviders } from '@/test/render-utils'
+import { server } from '@/test/server'
+
 import AdminPanelPage from './AdminPanelPage'
 
 function useUserHandlers(users: UserDto[], roles = ['User', 'Admin']) {
@@ -112,6 +113,60 @@ describe('<AdminPanelPage />', () => {
       within(screen.getByRole('table', { name: /users/i })).getByText(
         'Analyst',
       ),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the API validation message when creating a user fails', async () => {
+    const user = userEvent.setup()
+    const users: UserDto[] = [
+      {
+        id: 'user-1',
+        userName: 'Ava Stone',
+        email: 'ava@example.com',
+        role: 'Admin',
+      },
+    ]
+    useUserHandlers(users, ['User', 'Admin'])
+    server.use(
+      http.post('*/api/users', () =>
+        HttpResponse.json(
+          {
+            title: 'One or more validation errors occurred.',
+            status: 400,
+            errors: {
+              UserName: ['A user with this login already exists.'],
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+
+    renderWithProviders(<AdminPanelPage />, {
+      authClaims: { role: 'Admin' },
+      isAuthenticated: true,
+    })
+
+    const addUserForm = screen.getByRole('form', { name: /add new user/i })
+
+    await waitFor(() => {
+      expect(within(addUserForm).getByText('User')).toBeInTheDocument()
+    })
+
+    await user.type(
+      within(addUserForm).getByLabelText(/username/i),
+      'Ava Stone',
+    )
+    await user.type(
+      within(addUserForm).getByLabelText(/email/i),
+      'ava@example.com',
+    )
+    await user.click(
+      within(addUserForm).getByRole('button', { name: /create user/i }),
+    )
+
+    expect(
+      await screen.findByText('A user with this login already exists.'),
     ).toBeInTheDocument()
   })
 

@@ -1,5 +1,6 @@
-import { refreshSession } from '../lib/auth-service'
-import { authStore } from '../lib/auth-store'
+import { refreshSession } from '@/lib/auth-service'
+import { authStore } from '@/lib/auth-store'
+import { safeJsonParse } from '@/lib/json'
 
 export class ApiError extends Error {
   readonly status: number
@@ -71,7 +72,9 @@ export const customFetch = async <T>(
   const rawBody = [204, 205, 304].includes(response.status)
     ? ''
     : await response.text()
-  const parsedBody: unknown = rawBody ? safeJsonParse(rawBody) : undefined
+  const parsedBody: unknown = rawBody
+    ? safeJsonParse(rawBody, rawBody)
+    : undefined
 
   // Handle 401 Unauthorized - clear tokens on auth failure
   if (response.status === 401 && clearSessionOnUnauthorized) {
@@ -91,12 +94,4 @@ export const customFetch = async <T>(
     status: response.status,
     headers: response.headers,
   } as T
-}
-
-function safeJsonParse(raw: string): unknown {
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return raw
-  }
 }

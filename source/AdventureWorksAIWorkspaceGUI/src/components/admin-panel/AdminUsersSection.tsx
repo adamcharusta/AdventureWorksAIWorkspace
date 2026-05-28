@@ -14,8 +14,9 @@ import TableRow from '@mui/material/TableRow'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
-import type { UserDto } from '../../api/generated/model'
-import type { UserActionHandler } from './adminPanelTypes'
+import type { UserDto } from '@/api/generated/model'
+
+import type { UserActionHandler } from './admin-panel-types'
 import { AdminSectionHeader } from './AdminSectionHeader'
 
 type AdminUsersSectionProps = {

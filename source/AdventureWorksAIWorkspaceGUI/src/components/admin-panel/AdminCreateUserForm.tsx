@@ -3,13 +3,13 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 
 import type {
   CreateUserFormState,
   FormFieldChangeHandler,
   RoleFieldState,
-} from './adminPanelTypes'
+} from './admin-panel-types'
 import { AdminSectionHeader } from './AdminSectionHeader'
 import { RoleSelectField } from './RoleSelectField'
 
@@ -17,7 +17,7 @@ type AdminCreateUserFormProps = {
   form: CreateUserFormState
   isSubmitting: boolean
   onChange: FormFieldChangeHandler<CreateUserFormState>
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void
   roleFieldState: RoleFieldState
   roleOptions: string[]
   roleValue: string

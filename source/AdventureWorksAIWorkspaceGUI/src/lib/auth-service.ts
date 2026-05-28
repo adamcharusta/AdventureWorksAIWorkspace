@@ -1,4 +1,5 @@
 import { authStore } from './auth-store'
+import { safeJsonParse } from './json'
 
 type RefreshResponseBody = {
   accessToken: string
@@ -21,14 +22,6 @@ function isRefreshResponseBody(value: unknown): value is RefreshResponseBody {
     typeof candidate.accessToken === 'string' &&
     typeof candidate.refreshToken === 'string'
   )
-}
-
-function parseJson(raw: string): unknown {
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return undefined
-  }
 }
 
 function createRefreshHeaders(): Headers {
@@ -69,7 +62,7 @@ async function executeRefresh({
     return false
   }
 
-  const body = parseJson(await response.text())
+  const body = safeJsonParse(await response.text(), undefined)
 
   if (!isRefreshResponseBody(body)) {
     clearTokensIfNeeded(clearSessionOnFailure)

@@ -16,15 +16,15 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { ChatDrawer } from '../components/workspace/ChatDrawer'
+import { ChatDrawer } from '@/components/workspace/ChatDrawer'
 import {
   MenuDrawer,
   type MenuDrawerItem,
-} from '../components/workspace/MenuDrawer'
-import { useAuth } from '../hooks/use-auth'
-import { useThemeMode } from '../hooks/use-theme-mode'
-import { isAdminRole } from '../lib/auth-roles'
-import { toast } from '../lib/toast'
+} from '@/components/workspace/MenuDrawer'
+import { useAuth } from '@/hooks/use-auth'
+import { useThemeMode } from '@/hooks/use-theme-mode'
+import { isAdminRole } from '@/lib/auth-roles'
+import { toast } from '@/lib/toast'
 
 const reportItems: MenuDrawerItem[] = [
   { label: 'Workspace', icon: <DashboardRoundedIcon />, selected: true },

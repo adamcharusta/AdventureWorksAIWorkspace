@@ -1,7 +1,7 @@
 import MenuItem from '@mui/material/MenuItem'
 import TextField, { type TextFieldProps } from '@mui/material/TextField'
 
-import type { RoleFieldState } from './adminPanelTypes'
+import type { RoleFieldState } from './admin-panel-types'
 
 type RoleSelectFieldProps = {
   fieldState: RoleFieldState
