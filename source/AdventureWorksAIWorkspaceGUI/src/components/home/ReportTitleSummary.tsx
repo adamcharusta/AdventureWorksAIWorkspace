@@ -14,16 +14,17 @@ export function ReportTitleSummary({
     <Box sx={{ minWidth: 0 }}>
       <Typography
         component="h1"
+        noWrap
         sx={{
           fontWeight: 700,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}
-        variant="h4"
+        variant="h5"
       >
         {title}
       </Typography>
-      <Typography color="text.secondary" variant="body2">
+      <Typography color="text.secondary" noWrap variant="caption">
         {description}
       </Typography>
     </Box>

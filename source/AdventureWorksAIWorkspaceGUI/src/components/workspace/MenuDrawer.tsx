@@ -50,7 +50,7 @@ export function MenuDrawer({
       title={title}
       subtitle={subtitle}
     >
-      <Divider sx={{ my: 1 }} />
+      <Divider />
 
       {topItems.length > 0 && (
         <>

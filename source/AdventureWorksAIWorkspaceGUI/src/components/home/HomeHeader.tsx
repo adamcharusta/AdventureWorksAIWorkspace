@@ -41,8 +41,10 @@ export function HomeHeader({
       direction="row"
       spacing={2}
       sx={{
-        alignItems: 'flex-start',
+        alignItems: 'center',
         justifyContent: 'space-between',
+        minWidth: 0,
+        width: '100%',
       }}
     >
       {isEditingTitle && hasActiveReport ? (

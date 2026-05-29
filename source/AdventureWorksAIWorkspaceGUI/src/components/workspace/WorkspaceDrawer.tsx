@@ -15,6 +15,9 @@ import type { ReactNode } from 'react'
 
 export const drawerWidth = 280
 export const miniDrawerWidth = 72
+// Shared height of the header band across the drawers and the main workspace, so their
+// dividers line up horizontally.
+export const workspaceHeaderHeight = 64
 
 export type WorkspaceDrawerAnchor = 'left' | 'right'
 
@@ -32,10 +35,12 @@ type WorkspaceDrawerProps = {
   collapsedIcon?: ReactNode
   collapseLabel: string
   expandLabel: string
+  headerActions?: ReactNode
   onToggle: () => void
   open: boolean
   subtitle: string
   title: string
+  width?: number
 }
 
 type WorkspaceDrawerActionProps = {
@@ -130,13 +135,16 @@ export function WorkspaceDrawer({
   collapsedIcon = <MenuRoundedIcon />,
   collapseLabel,
   expandLabel,
+  headerActions,
   onToggle,
   open,
   subtitle,
   title,
+  width = drawerWidth,
 }: WorkspaceDrawerProps) {
   const theme = useTheme()
   const isRight = anchor === 'right'
+  const currentWidth = open ? width : miniDrawerWidth
 
   return (
     <Drawer
@@ -149,7 +157,7 @@ export function WorkspaceDrawer({
           duration: theme.transitions.duration.standard,
           easing: theme.transitions.easing.easeInOut,
         }),
-        width: open ? drawerWidth : miniDrawerWidth,
+        width: currentWidth,
         whiteSpace: 'nowrap',
         '& .MuiDrawer-paper': {
           bgcolor:
@@ -165,7 +173,7 @@ export function WorkspaceDrawer({
             easing: theme.transitions.easing.easeInOut,
           }),
           willChange: 'width',
-          width: open ? drawerWidth : miniDrawerWidth,
+          width: currentWidth,
         },
       }}
     >
@@ -175,16 +183,17 @@ export function WorkspaceDrawer({
           height: '100%',
           minHeight: 0,
           overflow: 'hidden',
+          pb: 1.5,
           px: 1.25,
-          py: 1.5,
         }}
       >
         <Stack
           direction="row"
           sx={{
             alignItems: 'center',
+            flexShrink: 0,
+            height: workspaceHeaderHeight,
             justifyContent: 'center',
-            minHeight: 48,
           }}
         >
           <Box
@@ -223,6 +232,19 @@ export function WorkspaceDrawer({
                 {subtitle}
               </Typography>
             </Box>
+
+            {open && headerActions ? (
+              <Box
+                sx={{
+                  alignItems: 'center',
+                  display: 'flex',
+                  flex: '0 0 auto',
+                  gap: 0.5,
+                }}
+              >
+                {headerActions}
+              </Box>
+            ) : null}
 
             <Tooltip title={open ? collapseLabel : expandLabel}>
               <IconButton

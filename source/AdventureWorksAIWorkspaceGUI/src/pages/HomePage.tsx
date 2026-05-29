@@ -1,11 +1,12 @@
 import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
+import Divider from '@mui/material/Divider'
 
 import { HomeHeader } from '@/components/home/HomeHeader'
 import { HomeMenuDrawer } from '@/components/home/HomeMenuDrawer'
 import { HomeWorkspaceContent } from '@/components/home/HomeWorkspaceContent'
 import { ReportDeleteDialog } from '@/components/home/ReportDeleteDialog'
 import { ChatDrawer } from '@/components/workspace/ChatDrawer'
+import { workspaceHeaderHeight } from '@/components/workspace/WorkspaceDrawer'
 import { useHomePageController } from '@/hooks/use-home-page-controller'
 
 const HomePage = () => {
@@ -37,17 +38,21 @@ const HomePage = () => {
           overflow: 'hidden',
         }}
       >
-        <Stack
-          spacing={3}
+        <Box
+          component="section"
           sx={{
+            alignItems: 'center',
+            display: 'flex',
             flex: '0 0 auto',
+            height: workspaceHeaderHeight,
             minWidth: 0,
             px: { xs: 2, md: 4 },
-            pt: { xs: 2, md: 3 },
           }}
         >
           <HomeHeader {...header} />
-        </Stack>
+        </Box>
+
+        <Divider sx={{ mx: { xs: 2, md: 4 } }} />
 
         <Box
           sx={{

@@ -4,6 +4,7 @@ import { getApiErrorMessage } from '@/lib/api-error'
 import {
   addReportMessage,
   createReport,
+  type ReportChatResponse,
   reportQueryKeys,
 } from '@/lib/report-api'
 import { toast } from '@/lib/toast'
@@ -66,13 +67,21 @@ export function useHomeReportChat({
     },
   })
 
-  const submitMessage = (message: string) => {
+  const submitMessage = async (
+    message: string,
+  ): Promise<ReportChatResponse> => {
     if (activeReportId) {
-      addMessageMutation.mutate({ reportId: activeReportId, message })
-      return
+      const response = await addMessageMutation.mutateAsync({
+        reportId: activeReportId,
+        message,
+      })
+
+      return response.data
     }
 
-    createReportMutation.mutate(message)
+    const response = await createReportMutation.mutateAsync(message)
+
+    return response.data
   }
 
   return {
