@@ -84,6 +84,14 @@ services:
       Identity__Jwt__Issuer: AdventureWorksAIWorkspaceAPI
       Identity__Jwt__Audience: AdventureWorksAIWorkspaceGUI
       Identity__Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in your environment or local .env file}
+      Identity__Jwt__AccessTokenLifetimeMinutes: ${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-60}
+      Identity__Jwt__RefreshTokenLifetimeDays: ${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-7}
+      AdventureWorks__CommandTimeoutSeconds: ${ADVENTUREWORKS_COMMAND_TIMEOUT_SECONDS:-30}
+      AdventureWorks__MaxRows: ${ADVENTUREWORKS_MAX_ROWS:-1000}
+      OpenAi__ApiKey: ${OPENAI_API_KEY:-}
+      OpenAi__Model: ${OPENAI_MODEL:-gpt-4o}
+      OpenAi__BaseUrl: ${OPENAI_BASE_URL:-}
+      OpenAi__TimeoutSeconds: ${OPENAI_TIMEOUT_SECONDS:-100}
       Serilog__WriteTo__1__Args__serverUrl: http://seq
     ports:
       - "${API_PORT:-5159}:8080"
