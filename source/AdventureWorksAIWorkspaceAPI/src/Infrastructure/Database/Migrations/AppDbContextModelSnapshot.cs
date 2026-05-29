@@ -22,6 +22,187 @@ namespace AdventureWorksAIWorkspaceAPI.Infrastructure.Database.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.GeneratedSqlQuery", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("DurationMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ExecutionMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ExecutionStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Explanation")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int?>("InputTokens")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OutputTokens")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ResultColumnCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ResultRowCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceMessageId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SqlText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserPrompt")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ValidationMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ValidationStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceMessageId");
+
+                    b.HasIndex("ReportId", "CreatedAt");
+
+                    b.ToTable("GeneratedSqlQueries");
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.Report", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OriginalPrompt")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "UpdatedAt");
+
+                    b.ToTable("Reports");
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportConversation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportId")
+                        .IsUnique();
+
+                    b.ToTable("ReportConversations");
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConversationId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RelatedSqlQueryId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RelatedSqlQueryId");
+
+                    b.HasIndex("ConversationId", "SortOrder")
+                        .IsUnique();
+
+                    b.ToTable("ReportMessages");
+                });
+
             modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Infrastructure.Identity.ApplicationRole", b =>
                 {
                     b.Property<string>("Id")
@@ -256,6 +437,62 @@ namespace AdventureWorksAIWorkspaceAPI.Infrastructure.Database.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.GeneratedSqlQuery", b =>
+                {
+                    b.HasOne("AdventureWorksAIWorkspaceAPI.Domain.Reports.Report", "Report")
+                        .WithMany("GeneratedSqlQueries")
+                        .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportMessage", "SourceMessage")
+                        .WithMany()
+                        .HasForeignKey("SourceMessageId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Report");
+
+                    b.Navigation("SourceMessage");
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.Report", b =>
+                {
+                    b.HasOne("AdventureWorksAIWorkspaceAPI.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportConversation", b =>
+                {
+                    b.HasOne("AdventureWorksAIWorkspaceAPI.Domain.Reports.Report", "Report")
+                        .WithOne("Conversation")
+                        .HasForeignKey("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportConversation", "ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Report");
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportMessage", b =>
+                {
+                    b.HasOne("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportConversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AdventureWorksAIWorkspaceAPI.Domain.Reports.GeneratedSqlQuery", "RelatedSqlQuery")
+                        .WithMany()
+                        .HasForeignKey("RelatedSqlQueryId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("RelatedSqlQuery");
+                });
+
             modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Infrastructure.Identity.RefreshToken", b =>
                 {
                     b.HasOne("AdventureWorksAIWorkspaceAPI.Infrastructure.Identity.ApplicationUser", "User")
@@ -316,6 +553,18 @@ namespace AdventureWorksAIWorkspaceAPI.Infrastructure.Database.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.Report", b =>
+                {
+                    b.Navigation("Conversation");
+
+                    b.Navigation("GeneratedSqlQueries");
+                });
+
+            modelBuilder.Entity("AdventureWorksAIWorkspaceAPI.Domain.Reports.ReportConversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

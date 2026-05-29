@@ -55,7 +55,7 @@ Trade-offs:
 
 ### Status
 
-Proposed
+Accepted
 
 ### Context
 
@@ -109,6 +109,138 @@ Reference notes:
 - Microsoft documents EF Core `DbContext` as the common ASP.NET Core pattern for relational data access, with scoped lifetime registration by default.
 - Microsoft documents EF Core raw SQL support, including parameterization guidance and `FromSqlRaw` risks.
 - The Dapper project documents parameterized queries, dynamic parameters, SQL Server support, and performance-oriented query mapping.
+
+---
+
+## Decision: Use the official OpenAI .NET SDK behind an Application abstraction for AI features
+
+### Date
+
+2026-05-28
+
+### Status
+
+Accepted
+
+### Context
+
+The core value of AdventureWorksAIWorkspace depends on calling a Large Language Model to turn natural language business questions into safe SQL, to suggest chart configurations, and to produce business summaries. The backend needs a single, well-defined way to talk to the model so the AI SQL workflow can stay testable and so the rest of the system never depends on a specific vendor SDK.
+
+Three integration styles were considered:
+
+1. The official `OpenAI` .NET SDK.
+2. A hand-written typed `HttpClient` that calls the OpenAI REST API directly with manual JSON DTOs.
+3. The `Azure.AI.OpenAI` SDK targeting Azure OpenAI deployments.
+
+A hand-written client gives full control but requires maintaining request/response DTOs, serialization, streaming, and error handling by hand. `Azure.AI.OpenAI` is the right choice only if the model is hosted on Azure OpenAI rather than `api.openai.com`, which is not the current assumption.
+
+### Decision
+
+Use the official `OpenAI` .NET SDK as the AI client library, hidden behind an Application-level abstraction.
+
+Adopt the following integration model:
+
+1. Define AI capabilities as Application-owned interfaces (for example, an SQL generation contract and a result summarization contract). The Application project must not reference the OpenAI SDK directly.
+2. Implement those interfaces in the Infrastructure project using the `OpenAI` SDK.
+3. Register the SDK client through a typed `HttpClient` (`AddHttpClient`) so timeouts, resilience policies, and request logging can be configured centrally.
+4. Bind model configuration through the options pattern (for example, `OpenAiOptions` with `ApiKey`, `Model`, `BaseUrl`, and `TimeoutSeconds`), mirroring the existing `JwtOptions` approach.
+5. Never commit the API key to `appsettings.json` or source control. Use development User Secrets and environment variables, consistent with the Identity bootstrap secret rules.
+6. Keep prompt construction, schema context shaping, and AI workflow orchestration in the Application layer; keep only transport, serialization, and SDK specifics in Infrastructure.
+7. Treat every model response as untrusted input. Generated SQL must pass the SQL safety validator before it can be executed against AdventureWorks.
+8. Cover the AI client with infrastructure registration tests, and cover the AI workflow handlers with application tests using a substituted AI abstraction.
+
+### Consequences
+
+Benefits:
+
+- The official SDK reduces boilerplate for chat completions, structured outputs, streaming, and error handling.
+- The Application layer stays vendor-neutral, so the model provider can be swapped by replacing the Infrastructure implementation only.
+- A typed `HttpClient` registration centralizes timeouts, retries, and request logging for outbound AI calls.
+- The options pattern keeps the model name and endpoint configurable per environment without code changes.
+- Treating AI output as untrusted preserves the read-only AdventureWorks safety model.
+
+Trade-offs:
+
+- The application takes a dependency on an external paid API; cost, rate limits, and token usage must be monitored.
+- Outbound calls add latency and a new failure mode, so timeouts, retries, and graceful degradation must be designed.
+- SDK version changes may require updates in the Infrastructure implementation.
+- Prompt content sent to the model must be reviewed for prompt injection and for accidental disclosure of sensitive schema or data.
+
+Follow-up decisions:
+
+- Decide the default model and whether different tasks (SQL generation vs. summary) should use different models.
+- Decide whether to use structured outputs / JSON schema responses for SQL and chart suggestions.
+- Decide how much AdventureWorks schema context to send: full schema, a curated semantic subset, or retrieved fragments.
+- Decide the resilience strategy (retry, circuit breaker, fallback) for outbound AI calls.
+
+Reference notes:
+
+- OpenAI documents an official .NET SDK for chat completions, structured outputs, and streaming.
+- Microsoft documents typed `HttpClient` registration through `IHttpClientFactory` for outbound HTTP integrations.
+- Microsoft documents the options pattern for binding strongly typed configuration sections.
+
+Implementation notes (2026-05-29):
+
+- The vendor-neutral transport abstraction is `IAiChatClient` (Application). Its implementation `OpenAiChatClient` (Infrastructure) wraps `OpenAI.Chat.ChatClient`.
+- The SDK is bridged onto an `IHttpClientFactory`-managed `HttpClient` through `System.ClientModel.Primitives.HttpClientPipelineTransport`, set on `OpenAIClientOptions.Transport`. This satisfies the typed-`HttpClient` requirement because the SDK uses System.ClientModel rather than consuming `HttpClient` directly.
+- The API key is read lazily in the client constructor (guarded), not at DI registration time. This keeps the application bootable without a key for non-AI flows; the guard fires only when an AI feature is first used.
+- The higher-level capability `IAiSqlGenerator` (interface in Application) builds the prompt and parses the model output. Its implementation `AiSqlGenerator` lives in `Infrastructure/Services` alongside the other service implementations, so prompt construction sits in Infrastructure rather than Application. The AI **workflow orchestration** (generate → validate → execute) remains in the Application layer, in the `GenerateReport` command handler. This is a deliberate adjustment to the original "prompt construction in Application" wording in favour of a single, uniform location for all service implementations.
+
+---
+
+## Decision: Model report chat persistence around reports, messages, and generated SQL artifacts
+
+### Date
+
+2026-05-29
+
+### Status
+
+Proposed
+
+### Context
+
+The reporting workflow is becoming chat-driven. Users should ask an initial business question, receive an AI-generated report, continue refining the report through follow-up messages, and later reopen the same report with its conversation history.
+
+The system also needs to preserve generated SQL for audit, troubleshooting, reuse, and token-cost reduction. Generated SQL is related to the conversation, but it has different lifecycle metadata than a chat message: validation status, execution status, token usage, row/column counts, and execution errors.
+
+### Decision
+
+Use `Report` as the durable parent record for the user-facing report.
+
+Adopt the following MVP persistence model:
+
+1. `Report` stores ownership and metadata: `UserId`, `Title`, `OriginalPrompt`, `Summary`, `Status`, `IsFavorite`, `CreatedAt`, and `UpdatedAt`.
+2. `ReportConversation` stores the one active conversation attached to a report, using `ReportId` as the relationship back to its parent report.
+3. `ReportMessage` stores user, assistant, and system messages in chronological order.
+4. `GeneratedSqlQuery` stores each generated or reused SQL attempt separately from the chat transcript.
+5. Generated SQL records link back to the report and, when possible, to the source user message that produced the SQL.
+6. The persisted chat API should use report-centered endpoints, such as creating a report from the first message and appending messages to an existing report.
+7. Report ownership must be enforced on every report read, chat, update, favorite, and export operation.
+
+### Consequences
+
+Benefits:
+
+- Saved reports can be reopened with both dashboard metadata and conversation history.
+- Multiple SQL attempts can be tracked for one report as the user refines it.
+- SQL validation and execution metadata remains auditable without cluttering the chat transcript.
+- The sidebar can query lightweight report metadata without loading full conversations or query results.
+- Future SQL reuse can search generated SQL artifacts independently from chat messages.
+
+Trade-offs:
+
+- The first persisted endpoint needs a transaction boundary that creates report records, messages, SQL artifacts, and status updates together.
+- A follow-up prompt needs context selection rules so the AI receives enough history without resending the entire transcript every time.
+- The design must decide whether to store raw result snapshots or only SQL/result metadata.
+- If users later need branching conversations, the one-conversation-per-report MVP model will need versioning or branching support.
+
+Follow-up decisions:
+
+- Decide whether the first persisted endpoint should be `POST /api/reports` or keep `POST /api/reports/generate` and evolve its contract.
+- Decide whether report titles are user-entered, AI-generated, or both.
+- Decide whether generated SQL should link to both the source user message and the assistant message that presented the result.
+- Decide the exact transaction and failure behavior when AI generation succeeds but persistence or SQL execution fails.
 
 ---
 

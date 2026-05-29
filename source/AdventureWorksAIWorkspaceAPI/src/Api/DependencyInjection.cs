@@ -31,6 +31,10 @@ public static class DependencyInjection
 
         builder.Host.UseWolverine(options =>
         {
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IAdventureWorksQueryExecutor>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IAiSqlGenerator>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IReportRepository>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<ISqlSafetyValidator>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IUserService>();
             options.AddApplicationServices();
         });

@@ -44,6 +44,16 @@ Potential fields:
 - CreatedAt
 - UpdatedAt
 
+Report should be the main aggregate users return to from the sidebar. It owns the report metadata and has one active conversation used to create and refine the report. In the relational model, prefer a one-to-one relationship through `ReportConversation.ReportId` rather than a required circular foreign key.
+
+Recommended MVP status values:
+
+- Draft
+- Generating
+- Ready
+- Failed
+- Archived
+
 ## ReportConversation
 
 Represents a conversation attached to a report.
@@ -55,6 +65,8 @@ Potential fields:
 - CreatedAt
 - UpdatedAt
 
+For MVP, a report should have one active conversation. Future versions may support multiple conversation branches or report versions if users need to compare alternative analyses.
+
 ## ReportMessage
 
 Represents a single message in a report conversation.
@@ -65,6 +77,8 @@ Potential fields:
 - ConversationId
 - Role
 - Content
+- SortOrder
+- RelatedSqlQueryId
 - CreatedAt
 
 Possible roles:
@@ -72,6 +86,8 @@ Possible roles:
 - User
 - Assistant
 - System
+
+User messages should store the prompt text exactly as submitted. Assistant messages should store the AI response shown in the chat panel, such as a summary, clarification, validation failure, or successful report-generation response.
 
 ## GeneratedSqlQuery
 
@@ -81,12 +97,34 @@ Potential fields:
 
 - Id
 - ReportId
+- SourceMessageId
 - UserPrompt
 - SqlText
 - Explanation
 - ValidationStatus
+- ValidationMessage
 - ExecutionStatus
+- ExecutionMessage
+- InputTokens
+- OutputTokens
+- ResultRowCount
+- ResultColumnCount
+- DurationMs
 - CreatedAt
+
+Generated SQL should remain separate from chat messages. A single report can accumulate multiple generated SQL attempts as the user asks follow-up questions or refines the report.
+
+Recommended MVP validation status values:
+
+- NotValidated
+- Valid
+- Rejected
+
+Recommended MVP execution status values:
+
+- NotExecuted
+- Executed
+- Failed
 
 ## ChartDefinition
 

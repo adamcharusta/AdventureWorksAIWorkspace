@@ -28,6 +28,9 @@ This document contains the initial product backlog for AdventureWorksAIWorkspace
 - [ ] Define report entity.
 - [ ] Define report metadata.
 - [ ] Define report conversation model.
+- [ ] Define report chat endpoint contracts.
+- [ ] Define generated SQL history model.
+- [ ] Define report ownership and access checks.
 - [ ] Define recent reports behavior.
 - [ ] Define favorite reports behavior.
 - [ ] Define report tagging behavior.
@@ -38,12 +41,14 @@ This document contains the initial product backlog for AdventureWorksAIWorkspace
 ### Tasks
 
 - [ ] Define AI prompt structure.
+- [ ] Define report chat context strategy for follow-up messages.
 - [ ] Define AdventureWorks schema context strategy.
 - [ ] Define intent extraction format.
 - [ ] Define SQL generation rules.
 - [ ] Define SQL validation rules.
 - [ ] Define SQL execution constraints.
 - [ ] Define SQL reuse and caching strategy.
+- [ ] Persist generated SQL validation and execution metadata.
 
 ## Epic: Backend Data Access
 

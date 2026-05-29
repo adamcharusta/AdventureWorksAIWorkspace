@@ -1,8 +1,10 @@
 using System.Text;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
 using AdventureWorksAIWorkspaceAPI.Application.WeatherForecasts;
+using AdventureWorksAIWorkspaceAPI.Infrastructure.AdventureWorks;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.Database;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.Identity;
+using AdventureWorksAIWorkspaceAPI.Infrastructure.OpenAi;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.Services;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.WeatherForecasts;
 using Ardalis.GuardClauses;
@@ -11,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AdventureWorksAIWorkspaceAPI.Infrastructure;
@@ -26,8 +29,43 @@ public static class DependencyInjection
 
         services.AddDatabaseServices(configuration);
         services.AddIdentityServices(configuration);
+        services.AddAdventureWorksServices(configuration);
+        services.AddOpenAiServices(configuration);
         services.AddSingleton<IWeatherForecastProvider, SampleWeatherForecastProvider>();
+        services.AddSingleton<ISqlSafetyValidator, SqlSafetyValidator>();
+        services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<IUserService, UserService>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddOpenAiServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<OpenAiOptions>(configuration.GetSection(OpenAiOptions.SectionName));
+
+        services.AddHttpClient<IAiChatClient, OpenAiChatClient>((sp, httpClient) =>
+        {
+            OpenAiOptions options = sp.GetRequiredService<IOptions<OpenAiOptions>>().Value;
+            httpClient.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+        });
+
+        services.AddScoped<IAiSqlGenerator, AiSqlGenerator>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddAdventureWorksServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        string? connectionString = configuration.GetConnectionString("AdventureWorksDatabase");
+        Guard.Against.NullOrWhiteSpace(connectionString);
+
+        services.Configure<AdventureWorksQueryOptions>(configuration.GetSection(AdventureWorksQueryOptions.SectionName));
+
+        services.AddScoped<IAdventureWorksQueryExecutor>(sp =>
+        {
+            AdventureWorksQueryOptions options = sp.GetRequiredService<IOptions<AdventureWorksQueryOptions>>().Value;
+            return new DapperAdventureWorksQueryExecutor(connectionString, options);
+        });
 
         return services;
     }

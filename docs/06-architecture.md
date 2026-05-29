@@ -159,6 +159,18 @@ Stores application-owned data:
 - Favorites.
 - Export history.
 
+Reports are the durable parent record for the chat-driven reporting experience. A report should own its metadata, have one active conversation in the MVP, and have child generated-SQL artifacts for each AI SQL attempt. Chat messages and generated SQL should be stored separately so the user-facing conversation remains readable while the system preserves validation, execution, token, and result metadata for audit and reuse.
+
+### Report Chat API
+
+The persisted report chat API should be report-centered:
+
+- A create-report endpoint receives the first user message, creates the report and conversation, runs the AI SQL workflow, persists the generated SQL attempt, and returns the renderable response.
+- A follow-up-message endpoint appends a user message to an existing report conversation, verifies report ownership, builds context from prior messages and SQL artifacts, and persists the assistant response.
+- Report read endpoints return metadata for sidebars and full report details for reopening a saved report.
+
+The current generated-report endpoint is useful as a vertical slice for AI SQL generation, SQL validation, and AdventureWorks execution. It should not remain the long-term chat contract unless it also becomes responsible for report ownership, conversation persistence, generated SQL persistence, and report reload behavior.
+
 ### AdventureWorks Database
 
 Acts as the analytical business data source.
@@ -196,6 +208,16 @@ Responsible for:
 - Suggesting chart types.
 - Creating business summaries.
 - Supporting follow-up report refinement.
+
+The AI integration follows the same abstraction pattern as the reference Weather Forecast slice: AI capabilities are defined as Application-owned interfaces, and the concrete client lives in the Infrastructure project.
+
+- The Infrastructure client uses the official `OpenAI` .NET SDK, registered through a typed `HttpClient` so timeouts, resilience policies, and request logging are configured centrally.
+- Model configuration is bound through the options pattern (for example, `OpenAiOptions` with `ApiKey`, `Model`, `BaseUrl`, and `TimeoutSeconds`), mirroring `JwtOptions`.
+- The API key is never committed to `appsettings.json`; it is supplied through development User Secrets or environment variables, consistent with the Identity bootstrap secret rules.
+- Prompt construction, schema context shaping, and workflow orchestration stay in the Application layer. Only transport, serialization, and SDK specifics live in Infrastructure.
+- Every model response is treated as untrusted input. Generated SQL must pass the SQL validator before it can be executed against AdventureWorks.
+
+See the technical decision "Use the official OpenAI .NET SDK behind an Application abstraction for AI features" and the backend component mapping in `08-ai-sql-workflow.md`.
 
 ### SQL Validator
 

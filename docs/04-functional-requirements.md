@@ -142,3 +142,28 @@ Admin users should be able to delete user accounts from the admin panel.
 Only users with the Admin role may delete user accounts.
 
 The system must prevent an authenticated Admin user from deleting their own account.
+
+## FR-028: Report Chat Endpoint
+
+The system should expose an authenticated report chat workflow that accepts a user's natural language message and returns the AI-generated report response.
+
+The workflow should support creating a new report from the first chat message and adding follow-up messages to an existing report.
+
+The response should include enough data for the frontend to render the assistant reply, generated SQL metadata, query execution outcome, and tabular result metadata.
+
+## FR-029: Report Conversation and SQL Persistence
+
+The system should persist report chat history and generated SQL artifacts in the application database.
+
+Each saved report should store at minimum:
+
+- Report owner.
+- Report title.
+- Creation date.
+- Last modification date.
+- Current status.
+- Conversation relationship.
+
+Each conversation should preserve user and assistant messages in chronological order.
+
+Each generated SQL statement should be stored with its validation outcome, execution outcome, token usage when available, and a relationship to the report and the prompt/message that produced it.
