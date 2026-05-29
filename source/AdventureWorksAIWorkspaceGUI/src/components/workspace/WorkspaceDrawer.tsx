@@ -23,6 +23,7 @@ export type WorkspaceDrawerActionItem = {
   icon: ReactNode
   onClick?: () => void
   selected?: boolean
+  disabled?: boolean
 }
 
 type WorkspaceDrawerProps = {
@@ -53,6 +54,7 @@ export function WorkspaceDrawerAction({
   const button = (
     <ListItemButton
       aria-label={item.label}
+      disabled={item.disabled}
       onClick={item.onClick}
       selected={item.selected}
       sx={(theme) => ({
@@ -157,6 +159,7 @@ export function WorkspaceDrawer({
           borderColor: 'divider',
           boxSizing: 'border-box',
           overflowX: 'hidden',
+          overflowY: 'hidden',
           transition: theme.transitions.create('width', {
             duration: theme.transitions.duration.standard,
             easing: theme.transitions.easing.easeInOut,
@@ -170,6 +173,8 @@ export function WorkspaceDrawer({
         sx={{
           boxSizing: 'border-box',
           height: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
           px: 1.25,
           py: 1.5,
         }}

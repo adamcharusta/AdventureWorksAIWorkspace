@@ -39,10 +39,16 @@ Potential fields:
 - Title
 - OriginalPrompt
 - Summary
+- ResultJson
+- ChartsJson
 - Status
 - IsFavorite
 - CreatedAt
 - UpdatedAt
+
+`Title` is the user-visible report name shown in the sidebar. For the MVP, the report generation workflow should create an initial AI-suggested title and allow the user to rename it later.
+
+`ResultJson` and `ChartsJson` store the latest report result snapshot and chart configuration so a saved report can reopen as a full dashboard without immediately regenerating SQL. This is an MVP persistence choice and should be revisited if result snapshots become too large or if reports need historical versions.
 
 Report should be the main aggregate users return to from the sidebar. It owns the report metadata and has one active conversation used to create and refine the report. In the relational model, prefer a one-to-one relationship through `ReportConversation.ReportId` rather than a required circular foreign key.
 

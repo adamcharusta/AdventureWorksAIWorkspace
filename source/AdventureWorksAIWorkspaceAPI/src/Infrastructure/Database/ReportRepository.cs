@@ -35,6 +35,11 @@ public sealed class ReportRepository(AppDbContext dbContext) : IReportRepository
             .ToListAsync(cancellationToken);
     }
 
+    public void Remove(Report report)
+    {
+        dbContext.Reports.Remove(report);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await dbContext.SaveChangesAsync(cancellationToken);

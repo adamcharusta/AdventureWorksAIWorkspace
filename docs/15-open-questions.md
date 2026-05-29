@@ -24,7 +24,7 @@ Generated SQL should be hidden by default but available in a technical details s
 
 ---
 
-## Question: Should reports store raw result data or only SQL and chart configuration?
+## Resolved: Should reports store raw result data or only SQL and chart configuration?
 
 ### Context
 
@@ -36,9 +36,9 @@ Saved reports need to be reopened later. Storing raw data improves historical co
 - Store only SQL and regenerate results.
 - Store summarized metadata and optionally cache limited result data.
 
-### Current Assumption
+### Decision
 
-For MVP, store SQL, chart configuration, summary, and metadata. Raw result snapshot storage should be evaluated later.
+For MVP, store the latest rendered report snapshot, including the limited tabular result, AI-selected chart configuration, AI summary, generated SQL metadata, and report metadata. Revisit retention, freshness, and versioning once report result sizes are better understood.
 
 ---
 
@@ -227,7 +227,7 @@ Use one active conversation per report for MVP. Revisit branching only after the
 
 ---
 
-## Question: How should report titles be created?
+## Resolved: How should report titles be created?
 
 ### Context
 
@@ -239,7 +239,7 @@ Reports need titles for the sidebar and saved report list. The title could come 
 - Generate a title from the first prompt.
 - Generate a title automatically and allow the user to rename it later.
 
-### Current Assumption
+### Decision
 
 Generate a short title from the first prompt and allow the user to rename it later.
 

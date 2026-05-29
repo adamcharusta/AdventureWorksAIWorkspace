@@ -1,5 +1,6 @@
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.AdventureWorks;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Ai;
+using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Sql;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.CreateReport;
@@ -14,6 +15,7 @@ public sealed class CreateReportCommandHandlerTests
     private readonly IAiSqlGenerator _sqlGenerator = Substitute.For<IAiSqlGenerator>();
     private readonly ISqlSafetyValidator _sqlValidator = Substitute.For<ISqlSafetyValidator>();
     private readonly IAdventureWorksQueryExecutor _queryExecutor = Substitute.For<IAdventureWorksQueryExecutor>();
+    private readonly IReportVisualizer _reportVisualizer = Substitute.For<IReportVisualizer>();
 
     [Fact]
     public async Task Handle_WhenSqlExecutes_ShouldPersistReportConversationAndSql()
@@ -37,6 +39,12 @@ public sealed class CreateReportCommandHandlerTests
                 1,
                 false,
                 15));
+        _reportVisualizer
+            .CreatePresentationAsync("top products", Arg.Any<TabularResult>(), Arg.Any<CancellationToken>())
+            .Returns(new ReportPresentation(
+                "Road Bike is the top product.",
+                [new ChartSpec(ChartKind.Bar, "Top products", "Name", [new ChartSeries("Name", null)], null)],
+                "Top products by sales"));
 
         var response = await CreateReportCommandHandler.Handle(
             new CreateReportCommand("top products", "user-1"),
@@ -44,18 +52,27 @@ public sealed class CreateReportCommandHandlerTests
             _sqlGenerator,
             _sqlValidator,
             _queryExecutor,
+            _reportVisualizer,
             CancellationToken.None);
 
         savedReport.Should().NotBeNull();
         savedReport!.UserId.Should().Be("user-1");
-        savedReport.Title.Should().Be("top products");
+        savedReport.Title.Should().Be("Top products by sales");
         savedReport.Status.Should().Be(ReportStatus.Ready);
         savedReport.Conversation!.Messages.Should().HaveCount(2);
         savedReport.GeneratedSqlQueries.Should().ContainSingle();
         savedReport.GeneratedSqlQueries.Single().ExecutionStatus.Should().Be(SqlExecutionStatus.Executed);
+        savedReport.ResultJson.Should().NotBeNullOrWhiteSpace();
+        savedReport.ChartsJson.Should().NotBeNullOrWhiteSpace();
         response.Outcome.Should().Be(ReportOutcome.Executed);
         response.Report.Messages.Should().HaveCount(2);
+        response.Report.Result.Should().NotBeNull();
+        response.Report.Charts.Should().ContainSingle();
         response.SqlQuery!.ResultRowCount.Should().Be(1);
+        response.Charts.Should().ContainSingle();
+        response.Charts[0].Kind.Should().Be(ChartKind.Bar);
+        savedReport.Summary.Should().Be("Road Bike is the top product.");
+        response.AssistantMessage.Content.Should().Be("Road Bike is the top product.");
 
         await _reportRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }

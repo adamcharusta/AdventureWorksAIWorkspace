@@ -41,6 +41,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.Property(report => report.Title).IsRequired().HasMaxLength(256);
             entity.Property(report => report.OriginalPrompt).IsRequired().HasMaxLength(2000);
             entity.Property(report => report.Summary).HasMaxLength(4000);
+            entity.Property(report => report.ResultJson);
+            entity.Property(report => report.ChartsJson);
             entity.Property(report => report.Status).HasConversion<string>().IsRequired().HasMaxLength(32);
             entity.HasIndex(report => new { report.UserId, report.UpdatedAt });
             entity.HasOne<ApplicationUser>()

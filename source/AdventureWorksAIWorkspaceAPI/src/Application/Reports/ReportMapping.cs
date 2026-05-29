@@ -1,9 +1,17 @@
+using System.Text.Json;
+using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.AdventureWorks;
+using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
 using AdventureWorksAIWorkspaceAPI.Domain.Reports;
 
 namespace AdventureWorksAIWorkspaceAPI.Application.Reports;
 
 internal static class ReportMapping
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public static ReportSummaryDto ToSummaryDto(Report report) =>
         new(
             report.Id,
@@ -34,6 +42,8 @@ internal static class ReportMapping
             report.IsFavorite,
             report.CreatedAt,
             report.UpdatedAt,
+            Deserialize<TabularResult>(report.ResultJson),
+            Deserialize<IReadOnlyList<ChartSpec>>(report.ChartsJson) ?? [],
             messages,
             sqlQueries);
     }
@@ -64,4 +74,21 @@ internal static class ReportMapping
             query.ResultColumnCount,
             query.DurationMs,
             query.CreatedAt);
+
+    private static T? Deserialize<T>(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return default;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return default;
+        }
+    }
 }

@@ -1,5 +1,7 @@
+using System.Text.Json;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.AdventureWorks;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Ai;
+using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Sql;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Exceptions;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
@@ -10,12 +12,19 @@ namespace AdventureWorksAIWorkspaceAPI.Application.Reports;
 
 internal static class ReportChatWorkflow
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public static async Task<ReportChatResponse> ProcessAsync(
         Report report,
         ReportMessage userMessage,
         IAiSqlGenerator sqlGenerator,
         ISqlSafetyValidator sqlValidator,
         IAdventureWorksQueryExecutor queryExecutor,
+        IReportVisualizer reportVisualizer,
+        bool generateTitle,
         CancellationToken cancellationToken)
     {
         ReportConversation conversation = report.Conversation
@@ -26,6 +35,7 @@ internal static class ReportChatWorkflow
 
         GeneratedSqlQuery? sqlQuery = null;
         TabularResult? result = null;
+        IReadOnlyList<ChartSpec> charts = [];
         ReportOutcome outcome;
         string? message;
         string assistantContent;
@@ -54,11 +64,13 @@ internal static class ReportChatWorkflow
                 sqlQuery.ExecutionStatus = SqlExecutionStatus.NotExecuted;
 
                 report.Status = ReportStatus.Failed;
+                report.ResultJson = null;
+                report.ChartsJson = null;
                 message = validation.Reason;
                 outcome = ReportOutcome.Rejected;
                 assistantContent = $"The generated SQL was rejected by safety validation: {validation.Reason}";
 
-                return CreateResponse(report, conversation, userMessage, assistantContent, sqlQuery, outcome, message, result);
+                return CreateResponse(report, conversation, userMessage, assistantContent, sqlQuery, outcome, message, result, charts);
             }
 
             sqlQuery.ValidationStatus = SqlValidationStatus.Valid;
@@ -72,11 +84,22 @@ internal static class ReportChatWorkflow
                 sqlQuery.ResultColumnCount = result.Columns.Count;
                 sqlQuery.DurationMs = result.ElapsedMilliseconds;
 
+                ReportPresentation presentation = await reportVisualizer.CreatePresentationAsync(
+                    userMessage.Content, result, cancellationToken);
+                charts = presentation.Charts;
+
+                if (generateTitle && !string.IsNullOrWhiteSpace(presentation.Title))
+                {
+                    report.Title = CreateTitle(presentation.Title);
+                }
+
                 report.Status = ReportStatus.Ready;
-                report.Summary = $"Generated and executed a report query with {result.RowCount} rows.";
+                report.Summary = presentation.Insights;
+                report.ResultJson = JsonSerializer.Serialize(result, JsonOptions);
+                report.ChartsJson = JsonSerializer.Serialize(charts, JsonOptions);
                 message = null;
                 outcome = ReportOutcome.Executed;
-                assistantContent = "I generated and executed a SQL query for this report.";
+                assistantContent = presentation.Insights;
             }
             catch (QueryExecutionException exception)
             {
@@ -85,6 +108,8 @@ internal static class ReportChatWorkflow
 
                 report.Status = ReportStatus.Failed;
                 report.Summary = "The generated SQL passed validation but could not be executed.";
+                report.ResultJson = null;
+                report.ChartsJson = null;
                 message = exception.Message;
                 outcome = ReportOutcome.ExecutionFailed;
                 assistantContent = $"The generated SQL could not be executed: {exception.Message}";
@@ -94,12 +119,14 @@ internal static class ReportChatWorkflow
         {
             report.Status = ReportStatus.Failed;
             report.Summary = "The AI report generation request failed.";
+            report.ResultJson = null;
+            report.ChartsJson = null;
             message = exception.Message;
             outcome = ReportOutcome.GenerationFailed;
             assistantContent = $"The report could not be generated: {exception.Message}";
         }
 
-        return CreateResponse(report, conversation, userMessage, assistantContent, sqlQuery, outcome, message, result);
+        return CreateResponse(report, conversation, userMessage, assistantContent, sqlQuery, outcome, message, result, charts);
     }
 
     private static ReportChatResponse CreateResponse(
@@ -110,7 +137,8 @@ internal static class ReportChatWorkflow
         GeneratedSqlQuery? sqlQuery,
         ReportOutcome outcome,
         string? message,
-        TabularResult? result)
+        TabularResult? result,
+        IReadOnlyList<ChartSpec> charts)
     {
         var now = DateTime.UtcNow;
         var assistantMessage = new ReportMessage
@@ -133,7 +161,8 @@ internal static class ReportChatWorkflow
             sqlQuery is null ? null : ReportMapping.ToSqlQueryDto(sqlQuery),
             outcome,
             message,
-            result);
+            result,
+            charts);
     }
 
     public static int GetNextSortOrder(ReportConversation conversation) =>

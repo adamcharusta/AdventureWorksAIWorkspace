@@ -1,5 +1,6 @@
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.AdventureWorks;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Ai;
+using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Sql;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Exceptions;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
@@ -15,6 +16,7 @@ public sealed class AddReportMessageCommandHandlerTests
     private readonly IAiSqlGenerator _sqlGenerator = Substitute.For<IAiSqlGenerator>();
     private readonly ISqlSafetyValidator _sqlValidator = Substitute.For<ISqlSafetyValidator>();
     private readonly IAdventureWorksQueryExecutor _queryExecutor = Substitute.For<IAdventureWorksQueryExecutor>();
+    private readonly IReportVisualizer _reportVisualizer = Substitute.For<IReportVisualizer>();
 
     [Fact]
     public async Task Handle_WhenReportExists_ShouldAppendMessagesAndPersistSql()
@@ -36,6 +38,9 @@ public sealed class AddReportMessageCommandHandlerTests
                 1,
                 false,
                 2));
+        _reportVisualizer
+            .CreatePresentationAsync("show revenue by month", Arg.Any<TabularResult>(), Arg.Any<CancellationToken>())
+            .Returns(new ReportPresentation("Revenue trend looks stable.", []));
 
         var response = await AddReportMessageCommandHandler.Handle(
             new AddReportMessageCommand("report-1", "show revenue by month", "user-1"),
@@ -43,6 +48,7 @@ public sealed class AddReportMessageCommandHandlerTests
             _sqlGenerator,
             _sqlValidator,
             _queryExecutor,
+            _reportVisualizer,
             CancellationToken.None);
 
         report.Conversation!.Messages.Should().HaveCount(3);
@@ -51,6 +57,10 @@ public sealed class AddReportMessageCommandHandlerTests
         report.GeneratedSqlQueries.Single().SourceMessageId.Should().Be(response.UserMessage.Id);
         response.Outcome.Should().Be(ReportOutcome.Executed);
         response.AssistantMessage.RelatedSqlQueryId.Should().Be(response.SqlQuery!.Id);
+        response.Report.Result.Should().NotBeNull();
+        report.ResultJson.Should().NotBeNullOrWhiteSpace();
+        report.ChartsJson.Should().NotBeNullOrWhiteSpace();
+        report.Title.Should().Be("Sales");
 
         await _reportRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
@@ -68,6 +78,7 @@ public sealed class AddReportMessageCommandHandlerTests
             _sqlGenerator,
             _sqlValidator,
             _queryExecutor,
+            _reportVisualizer,
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();

@@ -1,4 +1,5 @@
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.AdventureWorks;
+using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.GenerateReport;
 using AdventureWorksAIWorkspaceAPI.Domain.Reports;
 
@@ -46,6 +47,8 @@ public sealed record ReportDetailsDto(
     bool IsFavorite,
     DateTime CreatedAt,
     DateTime UpdatedAt,
+    TabularResult? Result,
+    IReadOnlyList<ChartSpec> Charts,
     IReadOnlyList<ReportMessageDto> Messages,
     IReadOnlyList<GeneratedSqlQueryDto> GeneratedSqlQueries);
 
@@ -56,4 +59,5 @@ public sealed record ReportChatResponse(
     GeneratedSqlQueryDto? SqlQuery,
     ReportOutcome Outcome,
     string? Message,
-    TabularResult? Result);
+    TabularResult? Result,
+    IReadOnlyList<ChartSpec> Charts);

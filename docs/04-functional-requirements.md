@@ -167,3 +167,23 @@ Each saved report should store at minimum:
 Each conversation should preserve user and assistant messages in chronological order.
 
 Each generated SQL statement should be stored with its validation outcome, execution outcome, token usage when available, and a relationship to the report and the prompt/message that produced it.
+
+## FR-030: AI-Suggested Editable Report Titles
+
+The system should assign each generated report a short user-visible title.
+
+The initial title should be suggested automatically by the AI/report generation workflow, and the user should be able to rename the report later.
+
+The left report sidebar should display saved generated reports by their current title, similar to a chat history list.
+
+## FR-031: Rendered Report Snapshot
+
+The system should store the latest rendered report snapshot for each saved report.
+
+The snapshot should include:
+
+- The tabular result returned from AdventureWorks.
+- The AI-selected chart specifications.
+- The AI-generated business summary.
+
+When a user opens a saved report from the sidebar, the frontend should render the dashboard using the stored snapshot, including charts, table data, and text insights.

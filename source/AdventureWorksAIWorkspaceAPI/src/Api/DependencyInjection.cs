@@ -26,7 +26,13 @@ public static class DependencyInjection
             loggerConfiguration
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
-                .Enrich.FromLogContext();
+                .Enrich.FromLogContext()
+                // Requests cancelled by the client (a cancelled fetch, navigation, or a React
+                // StrictMode remount in development) surface as an OperationCanceledException
+                // through EF Core and Wolverine. These are not server faults, so drop any log
+                // event carrying one — this also silences Wolverine's own "Invocation ... failed!"
+                // error for cancelled message handlers.
+                .Filter.ByExcluding(logEvent => logEvent.Exception is OperationCanceledException);
         });
 
         builder.Host.UseWolverine(options =>
@@ -65,9 +71,19 @@ public static class DependencyInjection
             options.MessageTemplate =
                 "Handled {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
             options.GetLevel = (httpContext, _, exception) =>
-                exception is not null || httpContext.Response.StatusCode >= StatusCodes.Status500InternalServerError
+            {
+                // A request the client aborted (cancelled fetch, navigation) is not a server
+                // error; keep it out of the error logs.
+                if (exception is OperationCanceledException || httpContext.RequestAborted.IsCancellationRequested)
+                {
+                    return LogEventLevel.Debug;
+                }
+
+                return exception is not null
+                       || httpContext.Response.StatusCode >= StatusCodes.Status500InternalServerError
                     ? LogEventLevel.Error
                     : LogEventLevel.Information;
+            };
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
             {
                 diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);

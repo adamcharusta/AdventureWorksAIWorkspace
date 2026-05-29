@@ -9,11 +9,31 @@ public sealed class ApiExceptionHandler(
     ILogger<ApiExceptionHandler> logger,
     IProblemDetailsService problemDetailsService) : IExceptionHandler
 {
+    private const int ClientClosedRequest = 499;
+
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
+        // The client aborted the request before it completed (for example React Query cancelling
+        // an in-flight fetch on component unmount or a React StrictMode remount in development).
+        // This is not a server fault, so don't surface it as a 500 or log it as an error.
+        if (exception is OperationCanceledException && httpContext.RequestAborted.IsCancellationRequested)
+        {
+            logger.LogDebug(
+                "Request {Method} {Path} was cancelled by the client",
+                httpContext.Request.Method,
+                httpContext.Request.Path);
+
+            if (!httpContext.Response.HasStarted)
+            {
+                httpContext.Response.StatusCode = ClientClosedRequest;
+            }
+
+            return true;
+        }
+
         var problemDetails = CreateProblemDetails(exception);
         var statusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;
 

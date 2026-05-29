@@ -14,8 +14,9 @@ This document describes high-level user flows for AdventureWorksAIWorkspace.
 6. System validates the generated SQL.
 7. System executes the query against AdventureWorks.
 8. System generates chart and dashboard configuration.
-9. Frontend renders the report in the center workspace.
-10. Report is saved to the user's report history.
+9. System assigns an AI-suggested report title.
+10. Frontend renders the report in the center workspace with charts, tables, and AI-written insights.
+11. Report is saved to the user's report history with the latest rendered snapshot.
 
 ## Flow 2: Refine an Existing Report
 
@@ -30,10 +31,18 @@ This document describes high-level user flows for AdventureWorksAIWorkspace.
 ## Flow 3: Open a Recent Report
 
 1. User opens the left sidebar.
-2. User selects a report from recent reports.
+2. User selects a generated report from the saved report list.
 3. System loads the saved report.
 4. Center workspace displays the report dashboard.
 5. Right sidebar displays the report conversation history.
+
+## Flow 3A: Rename a Saved Report
+
+1. User opens a saved report.
+2. User chooses the rename action next to the current report title.
+3. User enters a new title.
+4. System saves the updated title.
+5. The left sidebar immediately shows the updated report title.
 
 ## Flow 4: Mark a Report as Favorite
 

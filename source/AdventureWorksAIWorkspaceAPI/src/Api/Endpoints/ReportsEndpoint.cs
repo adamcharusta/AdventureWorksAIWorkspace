@@ -2,9 +2,11 @@ using System.Security.Claims;
 using AdventureWorksAIWorkspaceAPI.Application.Reports;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.AddReportMessage;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.CreateReport;
+using AdventureWorksAIWorkspaceAPI.Application.Reports.DeleteReport;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.GenerateReport;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.GetReportDetails;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.GetReports;
+using AdventureWorksAIWorkspaceAPI.Application.Reports.RenameReport;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -138,6 +140,60 @@ public static class ReportsEndpoint
             await messageBus.InvokeAsync<GenerateReportResponse>(command, cancellationToken);
 
         return TypedResults.Ok(response);
+    }
+
+    [WolverinePut(
+        "/api/reports/{reportId}/title",
+        Name = "RenameReport",
+        OperationId = "RenameReport",
+        Summary = "Renames a saved report.",
+        Description =
+            "Updates the title of a report owned by the authenticated user. The initial title is " +
+            "suggested by the AI; this lets the user override it.")]
+    [Tags("Reports")]
+    [Authorize]
+    [ProducesResponseType<ReportSummaryDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public static async Task<Ok<ReportSummaryDto>> RenameReport(
+        string reportId,
+        [FromBody] RenameReportRequest request,
+        HttpContext httpContext,
+        IMessageBus messageBus,
+        CancellationToken cancellationToken)
+    {
+        ReportSummaryDto response = await messageBus.InvokeAsync<ReportSummaryDto>(
+            new RenameReportCommand(reportId, request.Title, GetCurrentUserId(httpContext)),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    [WolverineDelete(
+        "/api/reports/{reportId}",
+        Name = "DeleteReport",
+        OperationId = "DeleteReport",
+        Summary = "Deletes a saved report.",
+        Description =
+            "Permanently deletes a report owned by the authenticated user, including its conversation, " +
+            "chat messages, and generated SQL history.")]
+    [Tags("Reports")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public static async Task<NoContent> DeleteReport(
+        string reportId,
+        HttpContext httpContext,
+        IMessageBus messageBus,
+        CancellationToken cancellationToken)
+    {
+        await messageBus.InvokeAsync<DeleteReportResponse>(
+            new DeleteReportCommand(reportId, GetCurrentUserId(httpContext)),
+            cancellationToken);
+
+        return TypedResults.NoContent();
     }
 
     private static string? GetCurrentUserId(HttpContext httpContext) =>

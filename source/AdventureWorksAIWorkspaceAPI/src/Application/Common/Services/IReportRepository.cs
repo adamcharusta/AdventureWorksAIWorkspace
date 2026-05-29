@@ -10,5 +10,7 @@ public interface IReportRepository
 
     Task<IReadOnlyList<Report>> GetReportsForUserAsync(string userId, CancellationToken cancellationToken = default);
 
+    void Remove(Report report);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

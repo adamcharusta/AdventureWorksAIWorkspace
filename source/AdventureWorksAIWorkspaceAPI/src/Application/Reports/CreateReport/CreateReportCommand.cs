@@ -16,6 +16,7 @@ public static class CreateReportCommandHandler
         IAiSqlGenerator sqlGenerator,
         ISqlSafetyValidator sqlValidator,
         IAdventureWorksQueryExecutor queryExecutor,
+        IReportVisualizer reportVisualizer,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.CurrentUserId))
@@ -58,6 +59,8 @@ public static class CreateReportCommandHandler
             sqlGenerator,
             sqlValidator,
             queryExecutor,
+            reportVisualizer,
+            generateTitle: true,
             cancellationToken);
 
         await reportRepository.AddAsync(report, cancellationToken);

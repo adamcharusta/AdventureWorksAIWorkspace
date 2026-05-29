@@ -23,6 +23,7 @@ type MenuDrawerProps = {
   onToggle: () => void
   subtitle: string
   title: string
+  topItems?: MenuDrawerItem[]
 }
 
 export function MenuDrawer({
@@ -36,6 +37,7 @@ export function MenuDrawer({
   onToggle,
   subtitle,
   title,
+  topItems = [],
 }: MenuDrawerProps) {
   return (
     <WorkspaceDrawer
@@ -50,7 +52,34 @@ export function MenuDrawer({
     >
       <Divider sx={{ my: 1 }} />
 
-      <List sx={{ display: 'grid', gap: 0.5, py: 1.5, overflowY: 'auto' }}>
+      {topItems.length > 0 && (
+        <>
+          <List sx={{ display: 'grid', gap: 0.5, pb: 1, pt: 0.5 }}>
+            {topItems.map((item) => (
+              <WorkspaceDrawerAction
+                anchor={anchor}
+                key={item.label}
+                item={item}
+                open={open}
+              />
+            ))}
+          </List>
+          <Divider />
+        </>
+      )}
+
+      <List
+        sx={{
+          alignContent: 'start',
+          display: 'grid',
+          flex: '1 1 auto',
+          gap: 0.5,
+          gridAutoRows: 'max-content',
+          minHeight: 0,
+          overflowY: 'auto',
+          py: 1.5,
+        }}
+      >
         {items.map((item) => (
           <WorkspaceDrawerAction
             anchor={anchor}
@@ -63,7 +92,7 @@ export function MenuDrawer({
 
       {bottomItems.length > 0 && (
         <>
-          <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ flex: '0 0 auto' }} />
           <Divider />
           <List sx={{ display: 'grid', gap: 0.5, py: 1 }}>
             {bottomItems.map((item) => (

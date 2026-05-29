@@ -50,6 +50,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IAiSqlGenerator, AiSqlGenerator>();
+        services.AddScoped<IReportVisualizer, AiReportVisualizer>();
 
         return services;
     }

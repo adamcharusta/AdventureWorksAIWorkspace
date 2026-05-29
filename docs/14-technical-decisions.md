@@ -210,19 +210,22 @@ Use `Report` as the durable parent record for the user-facing report.
 
 Adopt the following MVP persistence model:
 
-1. `Report` stores ownership and metadata: `UserId`, `Title`, `OriginalPrompt`, `Summary`, `Status`, `IsFavorite`, `CreatedAt`, and `UpdatedAt`.
+1. `Report` stores ownership, metadata, and the latest rendered dashboard snapshot: `UserId`, `Title`, `OriginalPrompt`, `Summary`, `ResultJson`, `ChartsJson`, `Status`, `IsFavorite`, `CreatedAt`, and `UpdatedAt`.
 2. `ReportConversation` stores the one active conversation attached to a report, using `ReportId` as the relationship back to its parent report.
 3. `ReportMessage` stores user, assistant, and system messages in chronological order.
 4. `GeneratedSqlQuery` stores each generated or reused SQL attempt separately from the chat transcript.
 5. Generated SQL records link back to the report and, when possible, to the source user message that produced the SQL.
 6. The persisted chat API should use report-centered endpoints, such as creating a report from the first message and appending messages to an existing report.
 7. Report ownership must be enforced on every report read, chat, update, favorite, and export operation.
+8. Report titles are AI-suggested during initial generation and can be renamed by the owning user.
 
 ### Consequences
 
 Benefits:
 
 - Saved reports can be reopened with both dashboard metadata and conversation history.
+- The report sidebar can behave like a chat history list by showing each saved report title.
+- The center workspace can reopen a saved report with its latest chart configuration and tabular result without immediately rerunning SQL.
 - Multiple SQL attempts can be tracked for one report as the user refines it.
 - SQL validation and execution metadata remains auditable without cluttering the chat transcript.
 - The sidebar can query lightweight report metadata without loading full conversations or query results.
@@ -232,13 +235,12 @@ Trade-offs:
 
 - The first persisted endpoint needs a transaction boundary that creates report records, messages, SQL artifacts, and status updates together.
 - A follow-up prompt needs context selection rules so the AI receives enough history without resending the entire transcript every time.
-- The design must decide whether to store raw result snapshots or only SQL/result metadata.
+- Large analytical result sets may increase application database size, so query result limits and future retention/versioning rules matter.
 - If users later need branching conversations, the one-conversation-per-report MVP model will need versioning or branching support.
 
 Follow-up decisions:
 
 - Decide whether the first persisted endpoint should be `POST /api/reports` or keep `POST /api/reports/generate` and evolve its contract.
-- Decide whether report titles are user-entered, AI-generated, or both.
 - Decide whether generated SQL should link to both the source user message and the assistant message that presented the result.
 - Decide the exact transaction and failure behavior when AI generation succeeds but persistence or SQL execution fails.
 
