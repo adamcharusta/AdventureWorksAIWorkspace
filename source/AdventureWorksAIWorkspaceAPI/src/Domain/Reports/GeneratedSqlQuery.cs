@@ -14,6 +14,16 @@ public class GeneratedSqlQuery
 
     public string? Explanation { get; set; }
 
+    public string? PresentationTitle { get; set; }
+
+    public string? Summary { get; set; }
+
+    public string? Conclusions { get; set; }
+
+    public string? ResultJson { get; set; }
+
+    public string? ChartsJson { get; set; }
+
     public SqlValidationStatus ValidationStatus { get; set; } = SqlValidationStatus.NotValidated;
 
     public string? ValidationMessage { get; set; }

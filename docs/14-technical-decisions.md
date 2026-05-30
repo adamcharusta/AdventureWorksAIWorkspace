@@ -8,6 +8,45 @@ Use this document as a lightweight Architecture Decision Record log.
 
 ---
 
+## Decision: Model optional AI conclusions as a separate field, not an extension of the summary
+
+### Date
+
+2026-05-29
+
+### Status
+
+Accepted
+
+### Context
+
+Every successful report turn already produces a short business **summary** (insights). We want the AI to optionally add deeper analysis or recommendations — but only when it judges they add value. Two options were considered:
+
+1. Extend the existing always-present `Summary` so it sometimes carries longer conclusions.
+2. Add a separate, optional `Conclusions` field alongside `Summary`.
+
+### Decision
+
+Add a separate, nullable `Conclusions` field on both `Report` (latest turn) and `GeneratedSqlQuery` (per turn), mirroring the existing nullable `Summary` columns. The summary stays short and always present; conclusions are optional and may be null.
+
+This is captured as FR-032 and detailed in [09-reporting-and-visualization.md](09-reporting-and-visualization.md#ai-conclusions).
+
+Implementation notes (2026-05-29): `Conclusions` is a nullable `nvarchar(4000)` column on both `Report` and `GeneratedSqlQuery` (migration `AddReportConclusions`). The visualization step (`AiReportVisualizer`) asks for an optional `conclusions` property and treats absent/empty as null; the heuristic fallback never fabricates conclusions. The report chat workflow persists conclusions per turn and clears them on failed turns. The GUI renders a "Conclusions" panel under the insights only when a value is present.
+
+### Consequences
+
+Benefits:
+
+- The summary keeps a stable, predictable role (always a short answer), while conclusions can vary in length and be omitted without affecting the summary.
+- Conclusions are snapshot per turn, so a revisited report shows exactly what was generated.
+
+Trade-offs:
+
+- One extra nullable column on two tables and a small extension to the visualization prompt and DTOs.
+- Open questions on length, structure, and UI placement remain (tracked in [15-open-questions.md](15-open-questions.md)).
+
+---
+
 ## Decision: Use separate databases for application data and AdventureWorks data
 
 ### Date

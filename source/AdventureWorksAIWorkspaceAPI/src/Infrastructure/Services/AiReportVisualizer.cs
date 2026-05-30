@@ -43,6 +43,7 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
         {
           "title": "a short report title, at most 8 words, no quotes",
           "insights": "2-4 sentences of plain-text business insights",
+          "conclusions": "optional deeper analysis; omit or use null when you have nothing extra to add",
           "charts": [
             {
               "kind": "bar | line | pie | area | table",
@@ -57,9 +58,21 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
         Rules:
         - Only reference column names that appear in the provided columns.
         - "series" columns must be numeric; "categoryColumn" is the grouping/label column.
+        - Write every user-facing value in the same language as the user's question:
+          report title, insights, conclusions, chart titles, chart descriptions, and series labels.
+        - Keep JSON property names and result column names unchanged. If the question language is unclear or mixed, use English.
         - Use "line" or "area" for trends over a date/time column, "bar" for category comparisons,
           "pie" for parts of a whole with few categories, and "table" when no chart is meaningful.
         - Prefer one or two charts. If the data is not chartable, return a single "table" chart and still provide insights.
+
+        About "conclusions" (optional):
+        - "insights" describes what the result shows. "conclusions" goes further: it interprets a
+          trend the chart reveals, projects where it is heading, flags a caveat, or recommends a
+          next step. For example: "The chart shows a clear upward trend; if it holds, revenue in
+          2035 would be roughly 150% of today's level, so it is worth planning capacity ahead."
+        - Only include "conclusions" when it adds genuine value beyond the insights. When you have
+          nothing meaningful to add, omit the property or set it to null. Do not repeat the insights.
+        - Never put SQL or commands in "conclusions"; it is advisory prose only.
         """;
 
     private readonly IAiChatClient _chatClient;
@@ -170,7 +183,11 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
 
         string? title = string.IsNullOrWhiteSpace(parsed.Title) ? null : parsed.Title.Trim();
 
-        return new ReportPresentation(insights, charts, title);
+        // Conclusions are optional: an absent/empty value is normal and must stay null so the
+        // UI renders nothing extra. The fallback path never fabricates conclusions.
+        string? conclusions = string.IsNullOrWhiteSpace(parsed.Conclusions) ? null : parsed.Conclusions.Trim();
+
+        return new ReportPresentation(insights, charts, title, conclusions);
     }
 
     private static ChartSpec? MapChart(ChartJson chart, HashSet<string> columnNames)
@@ -246,6 +263,7 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
     private sealed record PresentationJson(
         [property: JsonPropertyName("title")] string? Title,
         [property: JsonPropertyName("insights")] string? Insights,
+        [property: JsonPropertyName("conclusions")] string? Conclusions,
         [property: JsonPropertyName("charts")] List<ChartJson>? Charts);
 
     private sealed record ChartJson(

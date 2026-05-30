@@ -18,4 +18,17 @@ public interface IAiSqlGenerator
     /// <param name="cancellationToken">A token used to cancel the request.</param>
     /// <returns>The generated SQL together with token usage when available.</returns>
     Task<GeneratedSql> GenerateSqlAsync(string question, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates a read-only SQL statement that answers the supplied question using existing
+    /// report context for follow-up requests.
+    /// </summary>
+    /// <param name="question">The user's natural-language business question.</param>
+    /// <param name="context">The current report context, when the question refines an existing report.</param>
+    /// <param name="cancellationToken">A token used to cancel the request.</param>
+    /// <returns>The generated SQL together with token usage when available.</returns>
+    Task<GeneratedSql> GenerateSqlAsync(
+        string question,
+        AiSqlGenerationContext? context,
+        CancellationToken cancellationToken = default);
 }

@@ -6,6 +6,7 @@ import { ReportTitleEditor } from './ReportTitleEditor'
 import { ReportTitleSummary } from './ReportTitleSummary'
 
 type HomeHeaderProps = {
+  activeReportId: string | null
   description: string
   hasActiveReport: boolean
   hasSqlQueries: boolean
@@ -22,6 +23,7 @@ type HomeHeaderProps = {
 }
 
 export function HomeHeader({
+  activeReportId,
   description,
   hasActiveReport,
   hasSqlQueries,
@@ -60,6 +62,7 @@ export function HomeHeader({
       )}
 
       <ReportActionsMenu
+        activeReportId={activeReportId}
         hasActiveReport={hasActiveReport}
         hasSqlQueries={hasSqlQueries}
         onCopySql={onCopySql}

@@ -187,3 +187,21 @@ The snapshot should include:
 - The AI-generated business summary.
 
 When a user opens a saved report from the sidebar, the frontend should render the dashboard using the stored snapshot, including charts, table data, and text insights.
+
+## FR-032: Optional AI Conclusions
+
+In addition to the always-present business summary (insights), the system may let the AI attach an optional, free-text **conclusions** block to a report turn.
+
+Conclusions are distinct from the summary:
+
+- The **summary** is always produced for a successful turn and stays short (it answers "what does this result show?").
+- **Conclusions** are optional and are added by the model only when it judges they add value, such as a non-obvious pattern, a recommended next step, or a data caveat (they answer "so what, and what next?").
+
+Behavioral rules:
+
+- The model decides whether to include conclusions; an absent or empty value is valid and common, and nothing extra should be rendered in that case.
+- Conclusions follow the language of the user's question, like all other user-facing text.
+- Conclusions are persisted per turn alongside that turn's insights, result, and charts, so a revisited report shows exactly what was generated.
+- Conclusions are advisory commentary only. They must never contain SQL to execute and must not be used to drive further query generation.
+
+See [09-reporting-and-visualization.md](09-reporting-and-visualization.md) for presentation details and [15-open-questions.md](15-open-questions.md) for open product/UX questions.

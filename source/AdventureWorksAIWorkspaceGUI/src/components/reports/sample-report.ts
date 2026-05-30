@@ -49,6 +49,10 @@ const MONTHLY_REVENUE_SAMPLE: ReportViewData = {
   insights:
     'Revenue trends upward through the year with a noticeable lift in the second half. ' +
     'The strongest months are Q4, which is worth planning inventory and marketing around.',
+  conclusions:
+    'The chart shows a clear upward trend. If it holds, next year would land well above this ' +
+    'one, so it is worth securing inventory and marketing capacity ahead of the Q4 peak rather ' +
+    'than reacting to it.',
   charts: [
     {
       kind: 'Line',

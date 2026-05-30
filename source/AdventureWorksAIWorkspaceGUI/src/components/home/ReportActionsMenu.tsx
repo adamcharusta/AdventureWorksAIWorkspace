@@ -1,6 +1,7 @@
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
+import FingerprintRoundedIcon from '@mui/icons-material/FingerprintRounded'
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
@@ -11,7 +12,10 @@ import MenuItem from '@mui/material/MenuItem'
 import Tooltip from '@mui/material/Tooltip'
 import { type MouseEvent, useState } from 'react'
 
+import { toast } from '@/lib/toast'
+
 type ReportActionsMenuProps = {
+  activeReportId: string | null
   hasActiveReport: boolean
   hasSqlQueries: boolean
   onCopySql: () => Promise<void> | void
@@ -20,6 +24,7 @@ type ReportActionsMenuProps = {
 }
 
 export function ReportActionsMenu({
+  activeReportId,
   hasActiveReport,
   hasSqlQueries,
   onCopySql,
@@ -35,6 +40,20 @@ export function ReportActionsMenu({
 
   const handleCloseActionsMenu = () => {
     setActionsAnchor(null)
+  }
+
+  const handleCopyReportId = async () => {
+    handleCloseActionsMenu()
+    if (!activeReportId) {
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(activeReportId)
+      toast.success('Report ID copied to clipboard.', 'Reports')
+    } catch {
+      toast.error('Could not copy the report ID to the clipboard.', 'Reports')
+    }
   }
 
   return (
@@ -79,6 +98,17 @@ export function ReportActionsMenu({
             <ContentCopyRoundedIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Copy SQL queries</ListItemText>
+        </MenuItem>
+        <MenuItem
+          disabled={!hasActiveReport}
+          onClick={() => {
+            void handleCopyReportId()
+          }}
+        >
+          <ListItemIcon>
+            <FingerprintRoundedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Copy report ID</ListItemText>
         </MenuItem>
         <MenuItem
           disabled={!hasActiveReport}

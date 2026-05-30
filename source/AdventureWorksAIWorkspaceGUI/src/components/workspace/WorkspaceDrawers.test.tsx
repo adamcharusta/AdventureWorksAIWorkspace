@@ -139,4 +139,17 @@ describe('<ChatDrawer />', () => {
     expect(screen.queryByText('You')).not.toBeInTheDocument()
     expect(screen.queryByText('AdventureWorks AI')).not.toBeInTheDocument()
   })
+
+  it('shows a working indicator while the AI response is pending', () => {
+    renderWithProviders(
+      <ChatDrawer
+        isSubmitting
+        messages={chatMessages}
+        open
+        onToggle={() => undefined}
+      />,
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent(/ai is analyzing/i)
+  })
 })

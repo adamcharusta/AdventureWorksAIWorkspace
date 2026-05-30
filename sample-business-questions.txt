@@ -1,0 +1,88 @@
+AdventureWorks AI Workspace - Przykładowe pytania biznesowe
+===========================================================
+
+Zbiór pytań w języku naturalnym, które pracownik biznesowy może zadać
+asystentowi, aby wygenerować przydatne raporty z bazy AdventureWorks.
+Skopiuj pytanie do czatu lub dostosuj je, podając własny produkt, region,
+rok albo zakres czasu. Pytania można zadawać po polsku lub po angielsku.
+
+
+WYNIKI SPRZEDAŻY
+----------------
+- Pokaż całkowity przychód ze sprzedaży w podziale na miesiące za ostatnie dwa lata.
+- Jakie były 10 najlepiej sprzedających się produktów według przychodu w zeszłym roku?
+- Porównaj przychód z zamówień online i stacjonarnych w podziale na kwartały.
+- W których miesiącach sprzedaż była najwyższa, a w których najniższa?
+- Pokaż łączny przychód, liczbę zamówień i średnią wartość zamówienia na kwartał.
+- Jak wygląda trend przychodu w czasie i w którym kierunku zmierza?
+
+
+PRODUKTY I KATEGORIE
+--------------------
+- Pokaż sprzedaż w podziale na kategorie i podkategorie produktów.
+- Które kategorie produktów generują największy przychód?
+- Wypisz 20 najlepszych produktów według sprzedanej ilości.
+- Porównaj przychód między kategoriami Bikes, Components, Clothing i Accessories.
+- Które produkty mają najwyższą cenę katalogową, ale najniższą sprzedaż?
+- Pokaż średnią cenę jednostkową i łączną sprzedaną ilość na podkategorię produktów.
+
+
+KLIENCI
+-------
+- Ilu różnych klientów złożyło zamówienie w każdym roku?
+- Kto jest 10 największymi klientami pod względem łącznych wydatków?
+- Podziel klientów na nowych, aktywnych, uśpionych i utraconych.
+- Jaka jest średnia liczba zamówień na klienta?
+- Pokaż udział przychodu pochodzącego od klientów sklepowych i klientów indywidualnych.
+
+
+REGIONY I TERYTORIA
+-------------------
+- Pokaż całkowity przychód w podziale na terytoria sprzedaży.
+- Które kraje lub regiony generują największy przychód?
+- Uszereguj terytoria według przychodu i liczby zamówień, od najsłabszych.
+- Porównaj sprzedaż między Ameryką Północną, Europą i grupą Pacific.
+- Jaki jest przychód narastająco od początku roku dla każdego terytorium?
+
+
+ZESPÓŁ HANDLOWY
+---------------
+- Pokaż całkowitą sprzedaż w podziale na handlowców.
+- Którzy handlowcy przekroczyli swój plan sprzedaży?
+- Porównaj sprzedaż narastająco od początku roku każdego handlowca z rokiem poprzednim.
+- Uszereguj handlowców według uzyskanej prowizji.
+- Które terytorium obsługuje każdy z najlepszych handlowców?
+
+
+ZAKUPY I DOSTAWCY
+-----------------
+- Pokaż łączną wartość zamówień zakupu w podziale na miesiące.
+- U których dostawców wydajemy najwięcej?
+- Wypisz zamówienia zakupu z największą odrzuconą ilością.
+- Porównaj otrzymaną ilość z zamówioną w podziale na produkty.
+- Jaki jest średni koszt transportu na zamówienie zakupu?
+
+
+MAGAZYN
+-------
+- Pokaż aktualny stan magazynowy w podziale na produkty.
+- Które produkty mają najniższy stan magazynowy?
+- Wypisz produkty i ich łączną ilość we wszystkich lokalizacjach.
+- Które produkty są przechowywane w największej liczbie lokalizacji?
+
+
+TRENDY W CZASIE
+---------------
+- Pokaż miesięczny trend sprzedaży i wyróżnij najlepszy miesiąc.
+- Porównaj tegoroczną sprzedaż z tym samym okresem rok wcześniej.
+- Jaki jest wzrost przychodu kwartał do kwartału?
+- Pokaż sezonowy wzorzec zamówień w ciągu roku kalendarzowego.
+
+
+WSKAZÓWKI
+---------
+- Doprecyzuj, który produkt, kategoria, region i zakres czasu Cię interesują.
+- Raport możesz dopracować, zadając pytania uzupełniające w tym samym czacie,
+  na przykład: „a teraz pokaż to w podziale na kwartały" albo „schowaj numer konta".
+- Poproś o konkretny typ wykresu, jeśli masz preferencję,
+  na przykład: „pokaż to jako wykres słupkowy" albo „pokaż trend jako wykres liniowy".

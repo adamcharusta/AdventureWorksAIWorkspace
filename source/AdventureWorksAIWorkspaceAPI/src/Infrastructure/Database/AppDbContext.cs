@@ -41,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.Property(report => report.Title).IsRequired().HasMaxLength(256);
             entity.Property(report => report.OriginalPrompt).IsRequired().HasMaxLength(2000);
             entity.Property(report => report.Summary).HasMaxLength(4000);
+            entity.Property(report => report.Conclusions).HasMaxLength(4000);
             entity.Property(report => report.ResultJson);
             entity.Property(report => report.ChartsJson);
             entity.Property(report => report.Status).HasConversion<string>().IsRequired().HasMaxLength(32);
@@ -88,6 +89,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.Property(query => query.UserPrompt).IsRequired().HasMaxLength(2000);
             entity.Property(query => query.SqlText).IsRequired();
             entity.Property(query => query.Explanation).HasMaxLength(4000);
+            entity.Property(query => query.PresentationTitle).HasMaxLength(256);
+            entity.Property(query => query.Summary).HasMaxLength(4000);
+            entity.Property(query => query.Conclusions).HasMaxLength(4000);
+            entity.Property(query => query.ResultJson);
+            entity.Property(query => query.ChartsJson);
             entity.Property(query => query.ValidationStatus).HasConversion<string>().IsRequired().HasMaxLength(32);
             entity.Property(query => query.ValidationMessage).HasMaxLength(2000);
             entity.Property(query => query.ExecutionStatus).HasConversion<string>().IsRequired().HasMaxLength(32);

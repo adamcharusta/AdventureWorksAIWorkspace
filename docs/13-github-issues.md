@@ -516,3 +516,56 @@ Add persisted report-centered chat endpoints that create reports, append convers
 - ai
 - data-model
 - security
+
+---
+
+## Issue: Add optional AI "conclusions" block to report turns
+
+> **Status:** Implemented on 2026-05-29 (on `main`; not filed as a GitHub issue). Nullable `Conclusions` column on `Report` and `GeneratedSqlQuery` (migration `AddReportConclusions`), optional `conclusions` in the visualization prompt/contract, persistence per turn, DTO + GUI ("Conclusions" panel) support. Backend and frontend tests green. See the technical decision "Model optional AI conclusions as a separate field, not an extension of the summary".
+
+### Context
+
+Every successful report turn already produces a short business **summary** (insights, 2–4 sentences) via the report visualization step. Users want the AI to optionally record deeper analysis, takeaways, or recommendations — but only when it actually adds value, not on every turn. This is a separate, optional element from the always-present summary. Tracked as FR-032 in [04-functional-requirements.md](04-functional-requirements.md) and described in [09-reporting-and-visualization.md](09-reporting-and-visualization.md#ai-conclusions).
+
+### Goal
+
+Let the model attach an optional, free-text **conclusions** block to a report turn, persisted and shown alongside that turn's insights, omitted when the model has nothing useful to add.
+
+### Scope
+
+- Add a nullable `Conclusions` field to `Report` (latest turn) and `GeneratedSqlQuery` (per turn), mirroring the existing nullable `Summary` columns.
+- Add an EF Core migration for the two new nullable columns, including the matching `.Designer.cs` file.
+- Extend the report presentation contract with an optional `Conclusions` value.
+- Extend the visualization system prompt and JSON contract with an optional `conclusions` property; treat absent or empty as "no conclusions".
+- Persist conclusions in the report chat workflow for both the report and the turn's `GeneratedSqlQuery`.
+- Surface conclusions in the report section and details DTOs and in the GUI report view.
+
+### Out of Scope
+
+- Letting users edit or write their own conclusions.
+- Using conclusions as input to further SQL generation.
+- Export formatting of conclusions (PDF/Excel) — handled with the export work.
+
+### Acceptance Criteria
+
+- [ ] A turn where the model returns conclusions stores and displays them under that turn's insights.
+- [ ] A turn where the model returns no conclusions stores null and renders nothing extra (no empty section or heading).
+- [ ] Conclusions follow the language of the user's question.
+- [ ] Revisiting a saved report shows the same conclusions that were generated (snapshot behavior).
+- [ ] The visualization fallback path never fabricates conclusions when the model output is unusable.
+- [ ] The new migration adds both nullable columns and ships with its `.Designer.cs` file.
+
+### Notes
+
+- Keep `Conclusions` strictly advisory text; never executable SQL (prompt-injection surface).
+- Decisions on placement, length cap, and exact wording are open in [15-open-questions.md](15-open-questions.md).
+- Reuse the nullable-`Summary` column shape for consistency.
+- Follows the technical decision "Model optional AI conclusions as a separate field, not an extension of the summary".
+
+### Labels
+
+- ai
+- reporting
+- backend
+- frontend
+- data-model

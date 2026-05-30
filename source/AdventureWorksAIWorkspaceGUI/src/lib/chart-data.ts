@@ -32,6 +32,25 @@ function columnIndex(result: TabularResult, name?: string | null): number {
   )
 }
 
+function isBlank(value: unknown): boolean {
+  return value === null || value === undefined || String(value).trim() === ''
+}
+
+/**
+ * Makes category labels unique while keeping them readable. Duplicate labels would collapse into a
+ * single band/point on the axis (a band scale keys items by value), which breaks bar/point
+ * positioning and axis hover, so repeats are disambiguated with a numeric suffix.
+ */
+function uniqueCategories(categories: string[]): string[] {
+  const seen = new Map<string, number>()
+
+  return categories.map((category) => {
+    const count = seen.get(category) ?? 0
+    seen.set(category, count + 1)
+    return count === 0 ? category : `${category} (${count + 1})`
+  })
+}
+
 function toNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === '') {
     return null
@@ -47,8 +66,19 @@ export function buildCartesianData(
 ): CartesianChartData {
   const categoryIdx = columnIndex(result, spec.categoryColumn)
 
-  const categories = result.rows.map((row, index) =>
-    categoryIdx >= 0 ? String(row[categoryIdx] ?? '') : String(index + 1),
+  // When a category column is specified, keep only rows that belong to this chart (a non-blank
+  // category). A single result set may pack several sections behind a discriminator column, where
+  // each section leaves the other sections' columns null; without this filter those foreign rows
+  // become empty categories that collapse together and break axis hover.
+  const rows =
+    categoryIdx >= 0
+      ? result.rows.filter((row) => !isBlank(row[categoryIdx]))
+      : result.rows
+
+  const categories = uniqueCategories(
+    rows.map((row, index) =>
+      categoryIdx >= 0 ? String(row[categoryIdx] ?? '') : String(index + 1),
+    ),
   )
 
   const series = spec.series
@@ -56,7 +86,7 @@ export function buildCartesianData(
     .filter(({ index }) => index >= 0)
     .map(({ entry, index }) => ({
       label: entry.label ?? entry.column,
-      data: result.rows.map((row) => toNumber(row[index])),
+      data: rows.map((row) => toNumber(row[index])),
     }))
 
   return { categories, series }
@@ -73,7 +103,14 @@ export function buildPieData(
     return []
   }
 
-  return result.rows.map((row, index) => ({
+  // Drop rows that do not belong to this slice set (blank label) for the same reason as the
+  // cartesian builder: a packed, multi-section result set leaves foreign rows' labels null.
+  const rows =
+    labelIdx >= 0
+      ? result.rows.filter((row) => !isBlank(row[labelIdx]))
+      : result.rows
+
+  return rows.map((row, index) => ({
     id: index,
     value: toNumber(row[valueIdx]) ?? 0,
     label: labelIdx >= 0 ? String(row[labelIdx] ?? '') : String(index + 1),

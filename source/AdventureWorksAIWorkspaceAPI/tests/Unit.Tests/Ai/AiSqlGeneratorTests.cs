@@ -32,20 +32,58 @@ public sealed class AiSqlGeneratorTests
     [Fact]
     public async Task GenerateSqlAsync_ShouldSendSystemAndUserMessages()
     {
+        IReadOnlyList<AiChatMessage>? capturedMessages = null;
         _chatClient
-            .CompleteAsync(Arg.Any<IReadOnlyList<AiChatMessage>>(), Arg.Any<CancellationToken>())
+            .CompleteAsync(
+                Arg.Do<IReadOnlyList<AiChatMessage>>(messages => capturedMessages = messages),
+                Arg.Any<CancellationToken>())
             .Returns(new AiChatResult("SELECT 1", null, null));
 
         var generator = new AiSqlGenerator(_chatClient);
 
         await generator.GenerateSqlAsync("show me total sales by territory");
 
+        capturedMessages.Should().NotBeNull();
+        capturedMessages!.Should().HaveCount(2);
+        capturedMessages[0].Role.Should().Be(AiChatRole.System);
+        capturedMessages[0].Content.Should().Contain("Sales.SalesOrderHeader");
+        capturedMessages[0].Content.Should().Contain("Sales.SalesOrderDetail");
+        capturedMessages[1].Role.Should().Be(AiChatRole.User);
+        capturedMessages[1].Content.Should().Contain("Business question:");
+        capturedMessages[1].Content.Should().Contain("show me total sales by territory");
+
         await _chatClient.Received(1).CompleteAsync(
-            Arg.Is<IReadOnlyList<AiChatMessage>>(messages =>
-                messages.Count == 2 &&
-                messages[0].Role == AiChatRole.System &&
-                messages[1].Role == AiChatRole.User &&
-                messages[1].Content == "show me total sales by territory"),
+            Arg.Any<IReadOnlyList<AiChatMessage>>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GenerateSqlAsync_WhenContextIsProvided_ShouldIncludeReportContext()
+    {
+        IReadOnlyList<AiChatMessage>? capturedMessages = null;
+        _chatClient
+            .CompleteAsync(
+                Arg.Do<IReadOnlyList<AiChatMessage>>(messages => capturedMessages = messages),
+                Arg.Any<CancellationToken>())
+            .Returns(new AiChatResult("SELECT 1", null, null));
+
+        var context = new AiSqlGenerationContext(
+            "2013 sales overview",
+            "Bikes dominate revenue.",
+            ["User: 2013 sales overview", "Assistant: Bikes dominate revenue."],
+            "SELECT TOP (10) SalesOrderID FROM Sales.SalesOrderHeader");
+        var generator = new AiSqlGenerator(_chatClient);
+
+        await generator.GenerateSqlAsync("show monthly trend", context);
+
+        capturedMessages.Should().NotBeNull();
+        capturedMessages![1].Content.Should().Contain("Business question:");
+        capturedMessages[1].Content.Should().Contain("show monthly trend");
+        capturedMessages[1].Content.Should().Contain("Original report prompt:");
+        capturedMessages[1].Content.Should().Contain("2013 sales overview");
+        capturedMessages[1].Content.Should().Contain("Current report summary:");
+        capturedMessages[1].Content.Should().Contain("Recent conversation:");
+        capturedMessages[1].Content.Should().Contain("Last successful SQL:");
+        capturedMessages[1].Content.Should().Contain("Sales.SalesOrderHeader");
     }
 }

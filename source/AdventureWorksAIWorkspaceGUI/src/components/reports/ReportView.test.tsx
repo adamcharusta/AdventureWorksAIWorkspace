@@ -29,6 +29,38 @@ describe('<ReportView />', () => {
     ).toBeInTheDocument()
   })
 
+  it('renders conclusions when present and omits the block when absent', () => {
+    const { rerender } = renderWithProviders(
+      <ReportView
+        report={{
+          question: 'Revenue trend',
+          insights: 'Revenue grew through the year.',
+          conclusions:
+            'The trend is clearly upward; if it holds, next year would be well above this one.',
+          charts: [],
+          result: null,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Conclusions')).toBeInTheDocument()
+    expect(screen.getByText(/trend is clearly upward/i)).toBeInTheDocument()
+
+    rerender(
+      <ReportView
+        report={{
+          question: 'Revenue trend',
+          insights: 'Revenue grew through the year.',
+          conclusions: null,
+          charts: [],
+          result: null,
+        }}
+      />,
+    )
+
+    expect(screen.queryByText('Conclusions')).not.toBeInTheDocument()
+  })
+
   it('omits charts when there is no result', () => {
     renderWithProviders(
       <ReportView
@@ -44,5 +76,43 @@ describe('<ReportView />', () => {
     expect(screen.getByText('Empty report')).toBeInTheDocument()
     expect(screen.getByText('Nothing to show.')).toBeInTheDocument()
     expect(screen.queryByText('Sales by category')).not.toBeInTheDocument()
+  })
+
+  it('renders appended report sections without replacing earlier sections', () => {
+    renderWithProviders(
+      <ReportView
+        report={{
+          question: 'Sales analysis',
+          insights: 'Latest summary',
+          charts: [],
+          result: null,
+          sections: [
+            {
+              id: 'section-1',
+              title: 'Initial sales overview',
+              question: 'Analyze sales',
+              insights: 'The original section remains visible.',
+              charts: [],
+              result: null,
+            },
+            {
+              id: 'section-2',
+              title: 'Added customer segment',
+              question: 'Add customer data',
+              insights: 'The follow-up section is appended.',
+              charts: [],
+              result: null,
+            },
+          ],
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Initial sales overview')).toBeInTheDocument()
+    expect(screen.getByText('Added customer segment')).toBeInTheDocument()
+    expect(screen.getByText(/original section remains/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/follow-up section is appended/i),
+    ).toBeInTheDocument()
   })
 })

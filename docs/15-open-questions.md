@@ -263,6 +263,30 @@ Link generated SQL to the report and source user message in the MVP. Add assista
 
 ---
 
+## Resolved: How long and how structured should AI conclusions be?
+
+### Context
+
+FR-032 introduces an optional, free-text conclusions block separate from the always-present 2–4 sentence summary. We needed to decide whether conclusions are free-form prose, a short bulleted list of takeaways/recommendations, or a capped paragraph — and what maximum length to enforce in the data model and prompt.
+
+### Decision
+
+Use free-form prose stored in a nullable `nvarchar(4000)` column (mirroring `Summary`). The prompt asks for concise conclusions and to omit them when nothing valuable can be added. Revisit a tighter length cap or structured bullets once real outputs are observed.
+
+---
+
+## Resolved: Where should AI conclusions appear in the report UI?
+
+### Context
+
+Conclusions are optional and only present on some turns. We needed to decide where they render relative to the summary, result table, and charts, and how to avoid visual clutter when they are absent.
+
+### Decision
+
+Render conclusions in a clearly labeled "Conclusions" panel directly under the turn's insights, and render nothing at all when conclusions are absent.
+
+---
+
 ## Question: What should happen when persistence, AI generation, validation, or SQL execution fails mid-flow?
 
 ### Context

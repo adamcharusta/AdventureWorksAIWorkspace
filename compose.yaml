@@ -55,6 +55,11 @@ services:
       ADVENTUREWORKS_DATABASE: ${ADVENTUREWORKS_DATABASE:-AdventureWorks2025}
       ADVENTUREWORKS_BACKUP_URL: ${ADVENTUREWORKS_BACKUP_URL:-https://github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorks2025.bak}
       ADVENTUREWORKS_BACKUP_FILE: ${ADVENTUREWORKS_BACKUP_FILE:-AdventureWorks2025.bak}
+      ADVENTUREWORKS_READER_USER: ${ADVENTUREWORKS_READER_USER:-awreader}
+      ADVENTUREWORKS_READER_PASSWORD: ${ADVENTUREWORKS_READER_PASSWORD:?Set ADVENTUREWORKS_READER_PASSWORD in your environment or local .env file}
+      APP_DATABASE: AdventureWorksAIWorkspace
+      APP_DB_USER: ${APP_DB_USER:-awapp}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in your environment or local .env file}
     volumes:
       - adventureworks-backups:/var/opt/mssql/backup
     restart: "no"
@@ -75,8 +80,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__AdventureWorksAIWorkspaceDatabase: Server=sqlserver,1433;Database=AdventureWorksAIWorkspace;User Id=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in your environment or local .env file};Encrypt=True;TrustServerCertificate=True;
-      ConnectionStrings__AdventureWorksDatabase: Server=sqlserver,1433;Database=${ADVENTUREWORKS_DATABASE:-AdventureWorks2025};User Id=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in your environment or local .env file};Encrypt=True;TrustServerCertificate=True;
+      ConnectionStrings__AdventureWorksAIWorkspaceDatabase: Server=sqlserver,1433;Database=AdventureWorksAIWorkspace;User Id=${APP_DB_USER:-awapp};Password=${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in your environment or local .env file};Encrypt=True;TrustServerCertificate=True;
+      ConnectionStrings__AdventureWorksDatabase: Server=sqlserver,1433;Database=${ADVENTUREWORKS_DATABASE:-AdventureWorks2025};User Id=${ADVENTUREWORKS_READER_USER:-awreader};Password=${ADVENTUREWORKS_READER_PASSWORD:?Set ADVENTUREWORKS_READER_PASSWORD in your environment or local .env file};Encrypt=True;TrustServerCertificate=True;ApplicationIntent=ReadOnly;
       Identity__InitialAdmin__Enabled: ${INITIAL_ADMIN_ENABLED:-true}
       Identity__InitialAdmin__UserName: ${INITIAL_ADMIN_USERNAME:-admin}
       Identity__InitialAdmin__Email: ${INITIAL_ADMIN_EMAIL:-admin@adventureworksai.local}

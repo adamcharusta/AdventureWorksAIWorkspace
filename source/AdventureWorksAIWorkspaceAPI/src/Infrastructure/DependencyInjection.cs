@@ -51,6 +51,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAiSqlGenerator, AiSqlGenerator>();
         services.AddScoped<IReportVisualizer, AiReportVisualizer>();
+        services.AddScoped<IReportIntentClassifier, AiReportIntentClassifier>();
 
         return services;
     }

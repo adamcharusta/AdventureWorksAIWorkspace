@@ -39,7 +39,9 @@ public static class DependencyInjection
         {
             options.CodeGeneration.AlwaysUseServiceLocationFor<IAdventureWorksQueryExecutor>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IAiSqlGenerator>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IReportIntentClassifier>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IReportRepository>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IReportVisualizer>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<ISqlSafetyValidator>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IUserService>();
             options.AddApplicationServices();

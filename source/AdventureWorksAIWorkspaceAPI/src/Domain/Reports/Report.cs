@@ -12,6 +12,8 @@ public class Report
 
     public string? Summary { get; set; }
 
+    public string? Conclusions { get; set; }
+
     public string? ResultJson { get; set; }
 
     public string? ChartsJson { get; set; }

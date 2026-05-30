@@ -26,7 +26,12 @@ public sealed class CreateReportCommandHandlerTests
             .Returns(Task.CompletedTask);
         _reportRepository.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         _sqlGenerator
-            .GenerateSqlAsync("top products", Arg.Any<CancellationToken>())
+            .GenerateSqlAsync(
+                "top products",
+                Arg.Is<AiSqlGenerationContext>(context =>
+                    context.OriginalPrompt == "top products" &&
+                    context.RecentMessages.Count == 0),
+                Arg.Any<CancellationToken>())
             .Returns(new GeneratedSql("SELECT TOP 10 * FROM Production.Product", 12, 8));
         _sqlValidator
             .Validate("SELECT TOP 10 * FROM Production.Product")
@@ -62,12 +67,20 @@ public sealed class CreateReportCommandHandlerTests
         savedReport.Conversation!.Messages.Should().HaveCount(2);
         savedReport.GeneratedSqlQueries.Should().ContainSingle();
         savedReport.GeneratedSqlQueries.Single().ExecutionStatus.Should().Be(SqlExecutionStatus.Executed);
+        savedReport.GeneratedSqlQueries.Single().PresentationTitle.Should().Be("Top products by sales");
+        savedReport.GeneratedSqlQueries.Single().Summary.Should().Be("Road Bike is the top product.");
+        savedReport.GeneratedSqlQueries.Single().ResultJson.Should().NotBeNullOrWhiteSpace();
+        savedReport.GeneratedSqlQueries.Single().ChartsJson.Should().NotBeNullOrWhiteSpace();
         savedReport.ResultJson.Should().NotBeNullOrWhiteSpace();
         savedReport.ChartsJson.Should().NotBeNullOrWhiteSpace();
         response.Outcome.Should().Be(ReportOutcome.Executed);
         response.Report.Messages.Should().HaveCount(2);
         response.Report.Result.Should().NotBeNull();
         response.Report.Charts.Should().ContainSingle();
+        response.Report.Sections.Should().ContainSingle();
+        response.Report.Sections[0].Title.Should().Be("Top products by sales");
+        response.Report.Sections[0].Result.Should().NotBeNull();
+        response.Report.Sections[0].Charts.Should().ContainSingle();
         response.SqlQuery!.ResultRowCount.Should().Be(1);
         response.Charts.Should().ContainSingle();
         response.Charts[0].Kind.Should().Be(ChartKind.Bar);

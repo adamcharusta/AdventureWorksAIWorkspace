@@ -33,17 +33,21 @@ internal static class ReportMapping
             .Select(ToSqlQueryDto)
             .ToList();
 
+        IReadOnlyList<ReportSectionDto> sections = CreateSections(report);
+
         return new ReportDetailsDto(
             report.Id,
             report.Title,
             report.OriginalPrompt,
             report.Summary,
+            report.Conclusions,
             report.Status,
             report.IsFavorite,
             report.CreatedAt,
             report.UpdatedAt,
             Deserialize<TabularResult>(report.ResultJson),
             Deserialize<IReadOnlyList<ChartSpec>>(report.ChartsJson) ?? [],
+            sections,
             messages,
             sqlQueries);
     }
@@ -74,6 +78,64 @@ internal static class ReportMapping
             query.ResultColumnCount,
             query.DurationMs,
             query.CreatedAt);
+
+    private static IReadOnlyList<ReportSectionDto> CreateSections(Report report)
+    {
+        List<ReportSectionDto> sections = report.GeneratedSqlQueries
+            .Where(query => query.ExecutionStatus == SqlExecutionStatus.Executed)
+            .Where(query => !string.IsNullOrWhiteSpace(query.Summary)
+                            || !string.IsNullOrWhiteSpace(query.ResultJson)
+                            || !string.IsNullOrWhiteSpace(query.ChartsJson))
+            .OrderBy(query => query.CreatedAt)
+            .Select(ToSectionDto)
+            .ToList();
+
+        if (sections.Count > 0)
+        {
+            return sections;
+        }
+
+        TabularResult? result = Deserialize<TabularResult>(report.ResultJson);
+        IReadOnlyList<ChartSpec> charts = Deserialize<IReadOnlyList<ChartSpec>>(report.ChartsJson) ?? [];
+        if (result is null && string.IsNullOrWhiteSpace(report.Summary))
+        {
+            return [];
+        }
+
+        return
+        [
+            new ReportSectionDto(
+                report.Id,
+                SourceMessageId: null,
+                report.OriginalPrompt,
+                report.Title,
+                report.Summary ?? "The report was generated successfully.",
+                string.IsNullOrWhiteSpace(report.Conclusions) ? null : report.Conclusions.Trim(),
+                result,
+                charts,
+                report.UpdatedAt)
+        ];
+    }
+
+    private static ReportSectionDto ToSectionDto(GeneratedSqlQuery query)
+    {
+        IReadOnlyList<ChartSpec> charts = Deserialize<IReadOnlyList<ChartSpec>>(query.ChartsJson) ?? [];
+
+        return new ReportSectionDto(
+            query.Id,
+            query.SourceMessageId,
+            query.UserPrompt,
+            string.IsNullOrWhiteSpace(query.PresentationTitle)
+                ? query.UserPrompt
+                : query.PresentationTitle.Trim(),
+            string.IsNullOrWhiteSpace(query.Summary)
+                ? "The report section was generated successfully."
+                : query.Summary.Trim(),
+            string.IsNullOrWhiteSpace(query.Conclusions) ? null : query.Conclusions.Trim(),
+            Deserialize<TabularResult>(query.ResultJson),
+            charts,
+            query.CreatedAt);
+    }
 
     private static T? Deserialize<T>(string? json)
     {

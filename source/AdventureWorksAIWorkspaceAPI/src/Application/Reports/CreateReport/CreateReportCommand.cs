@@ -61,6 +61,7 @@ public static class CreateReportCommandHandler
             queryExecutor,
             reportVisualizer,
             generateTitle: true,
+            intentClassifier: null,
             cancellationToken);
 
         await reportRepository.AddAsync(report, cancellationToken);

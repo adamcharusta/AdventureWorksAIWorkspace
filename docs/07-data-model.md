@@ -39,6 +39,7 @@ Potential fields:
 - Title
 - OriginalPrompt
 - Summary
+- Conclusions
 - ResultJson
 - ChartsJson
 - Status
@@ -49,6 +50,8 @@ Potential fields:
 `Title` is the user-visible report name shown in the sidebar. For the MVP, the report generation workflow should create an initial AI-suggested title and allow the user to rename it later.
 
 `ResultJson` and `ChartsJson` store the latest report result snapshot and chart configuration so a saved report can reopen as a full dashboard without immediately regenerating SQL. This is an MVP persistence choice and should be revisited if result snapshots become too large or if reports need historical versions.
+
+`Summary` is the always-present AI business summary for the latest turn. `Conclusions` is an optional, free-text companion to `Summary`: the model fills it only when it judges it adds value, so a null value is normal. It is a nullable `nvarchar(4000)` column, mirroring the `Summary` column shape.
 
 Report should be the main aggregate users return to from the sidebar. It owns the report metadata and has one active conversation used to create and refine the report. In the relational model, prefer a one-to-one relationship through `ReportConversation.ReportId` rather than a required circular foreign key.
 
@@ -107,6 +110,11 @@ Potential fields:
 - UserPrompt
 - SqlText
 - Explanation
+- PresentationTitle
+- Summary
+- Conclusions
+- ResultJson
+- ChartsJson
 - ValidationStatus
 - ValidationMessage
 - ExecutionStatus
@@ -118,7 +126,7 @@ Potential fields:
 - DurationMs
 - CreatedAt
 
-Generated SQL should remain separate from chat messages. A single report can accumulate multiple generated SQL attempts as the user asks follow-up questions or refines the report.
+Generated SQL should remain separate from chat messages. Each executed turn also snapshots its own presentation (`PresentationTitle`, `Summary`, optional `Conclusions`, `ResultJson`, `ChartsJson`) so a report can be revisited turn by turn exactly as generated. `Conclusions` is optional and may be null when the model added none. A single report can accumulate multiple generated SQL attempts as the user asks follow-up questions or refines the report.
 
 Recommended MVP validation status values:
 
@@ -195,6 +203,7 @@ Possible export types:
 
 ## Open Data Model Questions
 
+- How long should the optional `Conclusions` text be allowed to grow, and should it use `nvarchar(max)` or a capped length?
 - Should raw query result data be stored, or should reports store only SQL and chart configuration?
 - Should generated SQL be versioned per report refinement?
 - Should chart configuration be stored as JSON?

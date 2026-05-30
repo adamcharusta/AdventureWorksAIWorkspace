@@ -57,11 +57,25 @@ export type GeneratedSqlQueryDto = {
   createdAt: string
 }
 
+export type ReportSectionDto = {
+  id: string
+  sourceMessageId?: string | null
+  question: string
+  title: string
+  insights: string
+  conclusions?: string | null
+  result?: TabularResult | null
+  charts: ChartSpec[]
+  createdAt: string
+}
+
 export type ReportDetailsDto = ReportSummaryDto & {
   originalPrompt: string
   summary?: string | null
+  conclusions?: string | null
   result?: TabularResult | null
   charts: ChartSpec[]
+  sections?: ReportSectionDto[]
   messages: ReportMessageDto[]
   generatedSqlQueries: GeneratedSqlQueryDto[]
 }

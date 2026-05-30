@@ -62,6 +62,7 @@ export function useHomePageController() {
     },
     deleteDialog: deleteActions.deleteDialog,
     header: {
+      activeReportId: selection.activeReportId,
       description: headerCopy.description,
       hasActiveReport,
       hasSqlQueries: sqlQueries.length > 0,

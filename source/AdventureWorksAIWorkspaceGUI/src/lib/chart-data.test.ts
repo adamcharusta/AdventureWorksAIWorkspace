@@ -65,6 +65,85 @@ describe('buildCartesianData', () => {
 
     expect(data.categories).toEqual(['1', '2', '3'])
   })
+
+  it('keeps a null series value as a gap when the category is present', () => {
+    const spec: ChartSpec = {
+      kind: 'Line',
+      title: 'Revenue',
+      categoryColumn: 'Month',
+      series: [{ column: 'Revenue', label: 'Revenue' }],
+    }
+
+    const data = buildCartesianData(spec, result)
+
+    expect(data.categories).toEqual(['Jan', 'Feb', 'Mar'])
+    expect(data.series[0].data).toEqual([100, 150, null])
+  })
+
+  it('drops foreign rows whose category column is blank (packed multi-section result)', () => {
+    const packed: TabularResult = {
+      columns: [
+        { name: 'Section', dataType: 'varchar' },
+        { name: 'Product', dataType: 'nvarchar' },
+        { name: 'Revenue', dataType: 'decimal' },
+        { name: 'Region', dataType: 'nvarchar' },
+      ],
+      rows: [
+        ['Top products', 'Bike A', 500, null],
+        ['Top products', 'Bike B', 300, null],
+        ['Weak regions', null, 900, 'Europe'],
+        ['Weak regions', null, 700, 'Pacific'],
+      ],
+      rowCount: 4,
+      truncated: false,
+      elapsedMilliseconds: 1,
+    }
+
+    const spec: ChartSpec = {
+      kind: 'Bar',
+      title: 'Top products by revenue',
+      categoryColumn: 'Product',
+      series: [{ column: 'Revenue', label: 'Revenue' }],
+    }
+
+    const data = buildCartesianData(spec, packed)
+
+    expect(data.categories).toEqual(['Bike A', 'Bike B'])
+    expect(data.series[0].data).toEqual([500, 300])
+  })
+
+  it('disambiguates duplicate category labels', () => {
+    const dupes: TabularResult = {
+      columns: [
+        { name: 'Product', dataType: 'nvarchar' },
+        { name: 'Revenue', dataType: 'decimal' },
+      ],
+      rows: [
+        ['Road Bike', 10],
+        ['Road Bike', 20],
+        ['Road Bike', 30],
+      ],
+      rowCount: 3,
+      truncated: false,
+      elapsedMilliseconds: 1,
+    }
+
+    const spec: ChartSpec = {
+      kind: 'Bar',
+      title: 'Revenue',
+      categoryColumn: 'Product',
+      series: [{ column: 'Revenue', label: 'Revenue' }],
+    }
+
+    const data = buildCartesianData(spec, dupes)
+
+    expect(data.categories).toEqual([
+      'Road Bike',
+      'Road Bike (2)',
+      'Road Bike (3)',
+    ])
+    expect(data.series[0].data).toEqual([10, 20, 30])
+  })
 })
 
 describe('buildPieData', () => {
@@ -94,5 +173,34 @@ describe('buildPieData', () => {
     }
 
     expect(buildPieData(spec, result)).toEqual([])
+  })
+
+  it('drops foreign rows whose label is blank (packed multi-section result)', () => {
+    const packed: TabularResult = {
+      columns: [
+        { name: 'Region', dataType: 'nvarchar' },
+        { name: 'Revenue', dataType: 'decimal' },
+      ],
+      rows: [
+        ['Europe', 900],
+        [null, 0],
+        ['Pacific', 700],
+      ],
+      rowCount: 3,
+      truncated: false,
+      elapsedMilliseconds: 1,
+    }
+
+    const spec: ChartSpec = {
+      kind: 'Pie',
+      title: 'Revenue by region',
+      categoryColumn: 'Region',
+      series: [{ column: 'Revenue', label: null }],
+    }
+
+    expect(buildPieData(spec, packed)).toEqual([
+      { id: 0, value: 900, label: 'Europe' },
+      { id: 1, value: 700, label: 'Pacific' },
+    ])
   })
 })

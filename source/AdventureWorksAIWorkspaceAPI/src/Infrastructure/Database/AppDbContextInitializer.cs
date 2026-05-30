@@ -222,6 +222,11 @@ public class AppDbContextInitializer(
             "volume (61.3K units) but only about $1.1M in revenue, confirming their role as low-price " +
             "add-ons. Clothing and Components sit in between. The clearest opportunity is lifting the " +
             "accessory attach-rate on every bike sale to grow margin without depending solely on big-ticket bikes.";
+        const string categoryConclusions =
+            "Revenue is dangerously concentrated in a single category: with 85% of sales tied to Bikes, " +
+            "a downturn in that segment would hit the whole business. Treat lifting the accessory " +
+            "attach-rate as the primary growth lever for the next planning cycle — even a few extra " +
+            "accessories per bike sale would meaningfully diversify revenue without needing more bike volume.";
         var categoryResult = new TabularResult(
             [
                 new TabularColumn("Category", "nvarchar"),
@@ -263,6 +268,12 @@ public class AppDbContextInitializer(
             "$1,740, signalling a shift from a few large reseller orders toward many smaller online purchases. " +
             "The takeaway: the business is successfully broadening its customer base, so the focus now should " +
             "be on protecting margin per order as the channel mix tilts toward direct-to-consumer sales.";
+        const string trendConclusions =
+            "The chart shows a clear, sustained upward trend. If the 2013 growth rate holds, monthly " +
+            "revenue would roughly double again within two years, so planning capacity and inventory " +
+            "ahead of demand is worthwhile. Watch the falling average order value, though: volume is " +
+            "carrying the growth while per-order value erodes, so the next priority should be raising " +
+            "basket size on online orders before scaling spend further.";
         var trendResult = new TabularResult(
             [
                 new TabularColumn("Month", "nvarchar"),
@@ -316,6 +327,7 @@ public class AppDbContextInitializer(
             OriginalPrompt = categoryPrompt,
             // The workspace shows the most recent turn's result, charts, and summary.
             Summary = trendInsights,
+            Conclusions = trendConclusions,
             ResultJson = JsonSerializer.Serialize(trendResult, JsonOptions),
             ChartsJson = JsonSerializer.Serialize(trendCharts, JsonOptions),
             Status = ReportStatus.Ready,
@@ -358,6 +370,11 @@ public class AppDbContextInitializer(
             Explanation =
                 "Joins order detail lines to the product-category hierarchy, filters to 2013 order dates, " +
                 "and aggregates revenue and units sold per category.",
+            PresentationTitle = "Product category performance",
+            Summary = categoryInsights,
+            Conclusions = categoryConclusions,
+            ResultJson = JsonSerializer.Serialize(categoryResult, JsonOptions),
+            ChartsJson = JsonSerializer.Serialize(categoryCharts, JsonOptions),
             ValidationStatus = SqlValidationStatus.Valid,
             ExecutionStatus = SqlExecutionStatus.Executed,
             InputTokens = 142,
@@ -404,6 +421,11 @@ public class AppDbContextInitializer(
             Explanation =
                 "Buckets sales orders by calendar month for 2013 and reports revenue, distinct order count, " +
                 "and the derived average order value per month.",
+            PresentationTitle = "Monthly revenue and orders",
+            Summary = trendInsights,
+            Conclusions = trendConclusions,
+            ResultJson = JsonSerializer.Serialize(trendResult, JsonOptions),
+            ChartsJson = JsonSerializer.Serialize(trendCharts, JsonOptions),
             ValidationStatus = SqlValidationStatus.Valid,
             ExecutionStatus = SqlExecutionStatus.Executed,
             InputTokens = 168,

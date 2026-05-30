@@ -11,6 +11,7 @@ A generated report should contain:
 - Report title.
 - Original user prompt.
 - AI-generated business summary.
+- Optional AI conclusions (see [AI Conclusions](#ai-conclusions)).
 - One or more charts.
 - Optional tables.
 - Optional KPI cards.
@@ -18,6 +19,29 @@ A generated report should contain:
 - Report metadata.
 
 The MVP should persist the latest rendered report snapshot, including the tabular result returned from AdventureWorks and the AI-selected chart specifications. This allows the center workspace to render a saved report with charts, table data, and AI-written insights when the user reopens it from the sidebar.
+
+## AI Conclusions
+
+*Status: implemented.*
+
+Beyond the always-present business summary, a report turn may carry an optional **conclusions** block: a free-text section where the model records deeper analysis, key takeaways, caveats, or recommendations.
+
+It is rendered in the report workspace directly under the turn's insights (a labeled "Conclusions" panel), and nothing is rendered when the model produced no conclusions.
+
+How it differs from the summary:
+
+- **Summary (insights)** is always produced for a successful turn and stays short (2–4 sentences). It answers "what does this result show?".
+- **Conclusions** are optional. The model emits them only when it judges that extra value can be added (a non-obvious pattern, a recommended next step, a data caveat). They answer "so what, and what next?".
+
+Rules:
+
+- The model decides whether to include conclusions; an empty or absent value is valid and common.
+- Conclusions follow the language of the user's question, like all other user-facing text.
+- Conclusions are persisted per turn (alongside the section's insights, result, and charts) so a revisited report shows exactly what was generated.
+- Conclusions are advisory commentary only; they never contain SQL to execute and are not used to drive further query generation.
+- When conclusions are absent, the UI should render nothing extra (no empty heading or panel).
+
+Open product/UX questions about wording, length, and placement are tracked in [15-open-questions.md](15-open-questions.md).
 
 ## Visualization Types
 
@@ -129,3 +153,4 @@ The full rendered report snapshot should be stored separately from generated SQL
 - Should users be able to manually edit chart types?
 - Should users be able to rearrange dashboard widgets?
 - Should chart definitions be stored as JSON?
+- How long and how structured should AI conclusions be, and where should they appear in the report UI? (See [15-open-questions.md](15-open-questions.md).)

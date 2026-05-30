@@ -17,6 +17,7 @@ public static class AddReportMessageCommandHandler
         ISqlSafetyValidator sqlValidator,
         IAdventureWorksQueryExecutor queryExecutor,
         IReportVisualizer reportVisualizer,
+        IReportIntentClassifier intentClassifier,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.CurrentUserId))
@@ -53,6 +54,7 @@ public static class AddReportMessageCommandHandler
             queryExecutor,
             reportVisualizer,
             generateTitle: false,
+            intentClassifier,
             cancellationToken);
 
         await reportRepository.SaveChangesAsync(cancellationToken);

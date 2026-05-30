@@ -37,5 +37,6 @@ export interface TabularResult {
 
 export interface ReportPresentation {
   insights: string
+  conclusions?: string | null
   charts: ChartSpec[]
 }

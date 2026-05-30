@@ -38,17 +38,30 @@ public sealed record GeneratedSqlQueryDto(
     long? DurationMs,
     DateTime CreatedAt);
 
+public sealed record ReportSectionDto(
+    string Id,
+    string? SourceMessageId,
+    string Question,
+    string Title,
+    string Insights,
+    string? Conclusions,
+    TabularResult? Result,
+    IReadOnlyList<ChartSpec> Charts,
+    DateTime CreatedAt);
+
 public sealed record ReportDetailsDto(
     string Id,
     string Title,
     string OriginalPrompt,
     string? Summary,
+    string? Conclusions,
     ReportStatus Status,
     bool IsFavorite,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     TabularResult? Result,
     IReadOnlyList<ChartSpec> Charts,
+    IReadOnlyList<ReportSectionDto> Sections,
     IReadOnlyList<ReportMessageDto> Messages,
     IReadOnlyList<GeneratedSqlQueryDto> GeneratedSqlQueries);
 

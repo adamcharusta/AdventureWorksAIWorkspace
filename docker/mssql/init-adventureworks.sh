@@ -11,6 +11,15 @@ ADVENTUREWORKS_BACKUP_FILE="${ADVENTUREWORKS_BACKUP_FILE:-AdventureWorks2025.bak
 ADVENTUREWORKS_DATA_LOGICAL_NAME="${ADVENTUREWORKS_DATA_LOGICAL_NAME:-}"
 ADVENTUREWORKS_LOG_LOGICAL_NAME="${ADVENTUREWORKS_LOG_LOGICAL_NAME:-}"
 
+# Least-privilege, read-only login used by the application to query AdventureWorks.
+ADVENTUREWORKS_READER_USER="${ADVENTUREWORKS_READER_USER:-awreader}"
+ADVENTUREWORKS_READER_PASSWORD="${ADVENTUREWORKS_READER_PASSWORD:?ADVENTUREWORKS_READER_PASSWORD is required}"
+
+# Application database and its dedicated owner login (full access scoped to this database only).
+APP_DATABASE="${APP_DATABASE:-AdventureWorksAIWorkspace}"
+APP_DB_USER="${APP_DB_USER:-awapp}"
+APP_DB_PASSWORD="${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}"
+
 BACKUP_DIR="${ADVENTUREWORKS_BACKUP_DIR:-/var/opt/mssql/backup}"
 DATA_DIR="${MSSQL_DATA_DIR:-/var/opt/mssql/data}"
 BACKUP_PATH="$BACKUP_DIR/$ADVENTUREWORKS_BACKUP_FILE"
@@ -39,6 +48,9 @@ validate_file_name() {
 }
 
 validate_identifier "ADVENTUREWORKS_DATABASE" "$ADVENTUREWORKS_DATABASE"
+validate_identifier "ADVENTUREWORKS_READER_USER" "$ADVENTUREWORKS_READER_USER"
+validate_identifier "APP_DATABASE" "$APP_DATABASE"
+validate_identifier "APP_DB_USER" "$APP_DB_USER"
 validate_file_name "ADVENTUREWORKS_BACKUP_FILE" "$ADVENTUREWORKS_BACKUP_FILE"
 
 if [ -n "$ADVENTUREWORKS_DATA_LOGICAL_NAME" ]; then
@@ -73,8 +85,7 @@ database_exists=$(
 
 if [ "$database_exists" = "1" ]; then
     echo "Database $ADVENTUREWORKS_DATABASE already exists. AdventureWorks restore is skipped."
-    exit 0
-fi
+else
 
 mkdir -p "$BACKUP_DIR"
 
@@ -141,4 +152,78 @@ echo "Restoring $ADVENTUREWORKS_DATABASE from $BACKUP_PATH..."
 "$SQLCMD" "${SQLCMD_ARGS[@]}" -i "$restore_sql"
 rm -f "$restore_sql"
 
-echo "AdventureWorks database $ADVENTUREWORKS_DATABASE is ready."
+echo "AdventureWorks database $ADVENTUREWORKS_DATABASE restored."
+fi
+
+# Ensure a least-privilege, read-only login exists for the application's AdventureWorks
+# connection. db_datareader grants SELECT only; the explicit DENY blocks data modification even
+# if a future role grant would otherwise allow it. This is defense-in-depth on top of the
+# application's SQL safety validator, so AI-generated SQL can never write to AdventureWorks.
+# Runs on every start (idempotent), including when the database was restored previously.
+reader_password_escaped=${ADVENTUREWORKS_READER_PASSWORD//\'/\'\'}
+reader_sql="$(mktemp)"
+cat > "$reader_sql" <<SQL
+USE [master];
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$ADVENTUREWORKS_READER_USER')
+    CREATE LOGIN [$ADVENTUREWORKS_READER_USER] WITH PASSWORD = N'$reader_password_escaped';
+ELSE
+    ALTER LOGIN [$ADVENTUREWORKS_READER_USER] WITH PASSWORD = N'$reader_password_escaped';
+GO
+USE [$ADVENTUREWORKS_DATABASE];
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$ADVENTUREWORKS_READER_USER')
+    CREATE USER [$ADVENTUREWORKS_READER_USER] FOR LOGIN [$ADVENTUREWORKS_READER_USER];
+GO
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.database_role_members AS drm
+    JOIN sys.database_principals AS r ON r.principal_id = drm.role_principal_id AND r.name = N'db_datareader'
+    JOIN sys.database_principals AS m ON m.principal_id = drm.member_principal_id AND m.name = N'$ADVENTUREWORKS_READER_USER'
+)
+    ALTER ROLE db_datareader ADD MEMBER [$ADVENTUREWORKS_READER_USER];
+GO
+DENY INSERT, UPDATE, DELETE TO [$ADVENTUREWORKS_READER_USER];
+GO
+SQL
+
+echo "Configuring read-only login '$ADVENTUREWORKS_READER_USER' on $ADVENTUREWORKS_DATABASE..."
+"$SQLCMD" "${SQLCMD_ARGS[@]}" -i "$reader_sql"
+rm -f "$reader_sql"
+
+# Ensure the application database exists and is owned by a dedicated login. The application gets
+# full access (db_owner) to its own database only, so EF Core migrations work, while the login has
+# no server-level rights and no access to AdventureWorks. Idempotent; preserves existing data.
+app_password_escaped=${APP_DB_PASSWORD//\'/\'\'}
+app_sql="$(mktemp)"
+cat > "$app_sql" <<SQL
+USE [master];
+GO
+IF DB_ID(N'$APP_DATABASE') IS NULL
+    CREATE DATABASE [$APP_DATABASE];
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$APP_DB_USER')
+    CREATE LOGIN [$APP_DB_USER] WITH PASSWORD = N'$app_password_escaped';
+ELSE
+    ALTER LOGIN [$APP_DB_USER] WITH PASSWORD = N'$app_password_escaped';
+GO
+USE [$APP_DATABASE];
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$APP_DB_USER')
+    CREATE USER [$APP_DB_USER] FOR LOGIN [$APP_DB_USER];
+GO
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.database_role_members AS drm
+    JOIN sys.database_principals AS r ON r.principal_id = drm.role_principal_id AND r.name = N'db_owner'
+    JOIN sys.database_principals AS m ON m.principal_id = drm.member_principal_id AND m.name = N'$APP_DB_USER'
+)
+    ALTER ROLE db_owner ADD MEMBER [$APP_DB_USER];
+GO
+SQL
+
+echo "Configuring application owner login '$APP_DB_USER' on $APP_DATABASE..."
+"$SQLCMD" "${SQLCMD_ARGS[@]}" -i "$app_sql"
+rm -f "$app_sql"
+
+echo "Database bootstrap complete. AdventureWorks database $ADVENTUREWORKS_DATABASE is ready."

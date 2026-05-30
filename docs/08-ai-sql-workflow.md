@@ -159,6 +159,7 @@ The system saves:
 - Token usage metadata.
 - Chart definitions.
 - AI summary.
+- Optional AI conclusions (when the model provides them; see [09-reporting-and-visualization.md](09-reporting-and-visualization.md#ai-conclusions)).
 - Conversation messages.
 - Report metadata.
 
