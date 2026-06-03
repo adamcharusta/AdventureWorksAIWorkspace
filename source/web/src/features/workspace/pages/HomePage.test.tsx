@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
 import { renderWithProviders } from '@/test/render-utils'
@@ -8,11 +9,30 @@ import { server } from '@/test/server'
 
 import HomePage from './HomePage'
 
+function LocationPath() {
+  const location = useLocation()
+
+  return <span data-testid="location-path">{location.pathname}</span>
+}
+
+function renderHomePage(route = '/') {
+  return renderWithProviders(
+    <>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/raport/:reportId" element={<HomePage />} />
+      </Routes>
+      <LocationPath />
+    </>,
+    { route, isAuthenticated: true },
+  )
+}
+
 describe('<HomePage />', () => {
   it('toggles both menu and chat drawers', async () => {
     const user = userEvent.setup()
 
-    renderWithProviders(<HomePage />, { route: '/', isAuthenticated: true })
+    renderHomePage()
 
     const collapseMenuButton = screen.getByRole('button', {
       name: /collapse menu/i,
@@ -82,7 +102,7 @@ describe('<HomePage />', () => {
       }),
     )
 
-    renderWithProviders(<HomePage />, { route: '/', isAuthenticated: true })
+    renderHomePage('/raport/report-1')
 
     expect(
       await screen.findByRole('button', {
@@ -110,6 +130,70 @@ describe('<HomePage />', () => {
         name: /category sales overview/i,
         level: 1,
       }),
+    ).toBeInTheDocument()
+  })
+
+  it('uses the URL to open reports and returns to the root URL for a new report', async () => {
+    const user = userEvent.setup()
+
+    server.use(
+      http.get('*/api/reports', () =>
+        HttpResponse.json({
+          reports: [
+            {
+              id: 'report-1',
+              title: 'Sales by product category',
+              status: 'Ready',
+              isFavorite: false,
+              createdAt: '2026-05-29T00:00:00Z',
+              updatedAt: '2026-05-29T01:00:00Z',
+            },
+          ],
+        }),
+      ),
+      http.get('*/api/reports/report-1', () =>
+        HttpResponse.json({
+          id: 'report-1',
+          title: 'Sales by product category',
+          originalPrompt: 'Show sales by product category',
+          summary: 'Bikes produce most of the sales.',
+          status: 'Ready',
+          isFavorite: false,
+          createdAt: '2026-05-29T00:00:00Z',
+          updatedAt: '2026-05-29T01:00:00Z',
+          messages: [],
+          generatedSqlQueries: [],
+        }),
+      ),
+    )
+
+    renderHomePage()
+
+    expect(
+      await screen.findByText(/use the ai chat to create the next analysis/i),
+    ).toBeInTheDocument()
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: /sales by product category/i,
+      }),
+    )
+
+    expect(screen.getByTestId('location-path')).toHaveTextContent(
+      '/raport/report-1',
+    )
+    expect(
+      await screen.findByRole('heading', {
+        name: /sales by product category/i,
+        level: 1,
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /new report/i }))
+
+    expect(screen.getByTestId('location-path')).toHaveTextContent('/')
+    expect(
+      await screen.findByText(/use the ai chat to create the next analysis/i),
     ).toBeInTheDocument()
   })
 
@@ -222,7 +306,7 @@ describe('<HomePage />', () => {
       }),
     )
 
-    renderWithProviders(<HomePage />, { route: '/', isAuthenticated: true })
+    renderHomePage()
 
     await user.type(
       await screen.findByRole('textbox', { name: /chat message/i }),
@@ -236,6 +320,9 @@ describe('<HomePage />', () => {
         level: 1,
       }),
     ).toBeInTheDocument()
+    expect(screen.getByTestId('location-path')).toHaveTextContent(
+      '/raport/report-2',
+    )
     expect(screen.getAllByText(/bikes lead sales/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/data \(2 rows\)/i)).toBeInTheDocument()
     expect(screen.getByText('Category')).toBeInTheDocument()

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import {
   getGetReportDetailsQueryKey,
@@ -10,9 +10,9 @@ import {
 import { createReportViewData } from '@/features/workspace/components/home/home-report-utils'
 
 export function useHomeReportSelection() {
+  const navigate = useNavigate()
+  const { reportId: routeReportId } = useParams<{ reportId?: string }>()
   const queryClient = useQueryClient()
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
-  const [isNewReportSelected, setIsNewReportSelected] = useState(false)
 
   const reportsQuery = useQuery({
     queryKey: getGetReportsQueryKey(),
@@ -23,9 +23,8 @@ export function useHomeReportSelection() {
   const reports =
     reportsQuery.data?.status === 200 ? reportsQuery.data.data.reports : []
 
-  const activeReportId = isNewReportSelected
-    ? null
-    : (selectedReportId ?? reports[0]?.id ?? null)
+  const activeReportId = routeReportId ?? null
+  const isNewReportSelected = !activeReportId
 
   const selectedReportSummary =
     reports.find((item) => item.id === activeReportId) ?? null
@@ -46,21 +45,17 @@ export function useHomeReportSelection() {
     : null
 
   const openReport = (reportId: string) => {
-    setSelectedReportId(reportId)
-    setIsNewReportSelected(false)
+    navigate(`/raport/${encodeURIComponent(reportId)}`)
   }
 
   const startNewReport = () => {
-    setSelectedReportId(null)
-    setIsNewReportSelected(true)
+    navigate('/')
   }
 
   const removeDeletedReport = (reportId: string) => {
-    if (selectedReportId === reportId) {
-      setSelectedReportId(null)
+    if (activeReportId === reportId) {
+      navigate('/')
     }
-
-    setIsNewReportSelected(false)
   }
 
   const refreshReports = () => {

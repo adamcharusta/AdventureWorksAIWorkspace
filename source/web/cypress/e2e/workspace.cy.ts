@@ -83,6 +83,9 @@ describe('Workspace E2E', () => {
     cy.intercept('GET', '**/api/reports', (request) => {
       request.reply({ statusCode: 200, body: { reports } })
     }).as('getReports')
+    cy.intercept('GET', `**/api/reports/${createdReport.id}`, (request) => {
+      request.reply({ statusCode: 200, body: createdReport })
+    }).as('getReportDetails')
     cy.intercept('POST', '**/api/reports', (request) => {
       expect(request.body).to.deep.equal({
         message: 'Show sales by territory',
@@ -131,6 +134,7 @@ describe('Workspace E2E', () => {
     cy.get('[aria-label="Send"]').click()
 
     cy.wait('@createReport')
+    cy.location('pathname').should('eq', `/raport/${createdReport.id}`)
     cy.contains('h1', 'Sales by territory').should('be.visible')
     cy.contains('Territory revenue is led by North America.').should(
       'be.visible',

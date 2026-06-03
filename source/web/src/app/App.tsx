@@ -17,6 +17,7 @@ function App() {
 
       <Route element={<RequireAuth />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/raport/:reportId" element={<HomePage />} />
         <Route element={<RequireAdmin />}>
           <Route path="/admin" element={<AdminPanelPage />} />
         </Route>
