@@ -268,6 +268,8 @@ public sealed class ReportChatPipeline : IReportChatPipeline
     private static GeneratedSqlQuery AppendWorkingQuery(
         Report report, ReportMessage userMessage, GeneratedSql generated)
     {
+        // Every generated SQL attempt is retained as an audit row, even if it is later rejected,
+        // fails during execution, or only serves as the working row for a refined section.
         var sqlQuery = new GeneratedSqlQuery
         {
             ReportId = report.Id,
@@ -282,6 +284,11 @@ public sealed class ReportChatPipeline : IReportChatPipeline
         return sqlQuery;
     }
 
+    /// <summary>
+    /// Uses recent conversation context to decide whether the latest user message should overwrite
+    /// the most recent rendered section. Returns <c>null</c> when the new turn should append a new
+    /// section instead.
+    /// </summary>
     private async Task<GeneratedSqlQuery?> ResolveRefineTargetAsync(
         Report report,
         ReportConversation conversation,
@@ -319,6 +326,11 @@ public sealed class ReportChatPipeline : IReportChatPipeline
         return intent == ReportChatIntent.RefineLastSection ? lastSection : null;
     }
 
+    /// <summary>
+    /// Builds the bounded context sent to the SQL generator. The context includes the original
+    /// report prompt, current summary, recent conversation, latest successful SQL, and the previous
+    /// failed attempt when the model is being asked to self-correct.
+    /// </summary>
     private static AiSqlGenerationContext BuildSqlGenerationContext(
         Report report,
         ReportConversation conversation,
@@ -346,6 +358,10 @@ public sealed class ReportChatPipeline : IReportChatPipeline
             previousFailure);
     }
 
+    /// <summary>
+    /// Trims prompt context so retries and long conversations do not consume excessive model input.
+    /// Returns <c>null</c> for blank values so prompt builders can omit empty sections.
+    /// </summary>
     private static string? TrimForContext(string? value, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -357,6 +373,10 @@ public sealed class ReportChatPipeline : IReportChatPipeline
         return text.Length <= maxLength ? text : string.Concat(text.AsSpan(0, maxLength - 3), "...");
     }
 
+    /// <summary>
+    /// Persists the assistant reply for the current turn and returns the combined response shape
+    /// expected by the chat UI.
+    /// </summary>
     private static ReportChatResponse CreateResponse(
         Report report,
         ReportConversation conversation,

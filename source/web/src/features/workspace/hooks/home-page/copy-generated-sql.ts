@@ -1,6 +1,13 @@
 import type { GeneratedSqlQueryDto } from '@/api/generated/model'
 import { toast } from '@/shared/lib/toast'
 
+/**
+ * Copies all generated SQL statements for the active report as one clipboard payload.
+ *
+ * Input is the report's generated SQL history in display order. Each query is prefixed with a
+ * comment header so users can paste multiple statements into a SQL editor without losing turn
+ * boundaries.
+ */
 export async function copyGeneratedSqlQueries(
   sqlQueries: GeneratedSqlQueryDto[],
 ) {

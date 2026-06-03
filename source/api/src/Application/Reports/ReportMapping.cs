@@ -5,8 +5,16 @@ using AdventureWorksAIWorkspace.Domain.Reports;
 
 namespace AdventureWorksAIWorkspace.Application.Reports;
 
+/// <summary>
+/// Converts the mutable report aggregate into API DTOs. This is also where persisted JSON snapshots
+/// are hydrated back into typed result/chart contracts for the frontend.
+/// </summary>
 internal static class ReportMapping
 {
+    /// <summary>
+    /// Lightweight shape used by the report sidebar; does not require loading the conversation or
+    /// generated SQL history.
+    /// </summary>
     public static ReportSummaryDto ToSummaryDto(Report report) =>
         new(
             report.Id,
@@ -16,6 +24,10 @@ internal static class ReportMapping
             report.CreatedAt,
             report.UpdatedAt);
 
+    /// <summary>
+    /// Full report shape used by the workspace. Requires the report aggregate with conversation
+    /// messages and generated SQL queries already loaded by the repository.
+    /// </summary>
     public static ReportDetailsDto ToDetailsDto(Report report)
     {
         IReadOnlyList<ReportMessageDto> messages = report.Conversation?.Messages
@@ -47,6 +59,10 @@ internal static class ReportMapping
             sqlQueries);
     }
 
+    /// <summary>
+    /// Maps one persisted conversation message into the wire contract while preserving sort order
+    /// and optional linkage to the SQL query generated from that message.
+    /// </summary>
     public static ReportMessageDto ToMessageDto(ReportMessage message) =>
         new(
             message.Id,
@@ -56,6 +72,10 @@ internal static class ReportMapping
             message.RelatedSqlQueryId,
             message.CreatedAt);
 
+    /// <summary>
+    /// Maps SQL audit metadata. Result and chart payloads stay on report sections rather than this
+    /// DTO so the client can render the conversation history and dashboard independently.
+    /// </summary>
     public static GeneratedSqlQueryDto ToSqlQueryDto(GeneratedSqlQuery query) =>
         new(
             query.Id,
@@ -74,6 +94,13 @@ internal static class ReportMapping
             query.DurationMs,
             query.CreatedAt);
 
+    /// <summary>
+    /// Builds renderable dashboard sections from per-query snapshots.
+    ///
+    /// Newer reports store each successful turn on <see cref="GeneratedSqlQuery"/>. Older reports
+    /// may only have the report-level latest snapshot, so this method falls back to a single section
+    /// built from the report itself.
+    /// </summary>
     private static IReadOnlyList<ReportSectionDto> CreateSections(Report report)
     {
         List<ReportSectionDto> sections = report.GeneratedSqlQueries
@@ -112,6 +139,10 @@ internal static class ReportMapping
         ];
     }
 
+    /// <summary>
+    /// Converts one successful SQL turn into a dashboard section. The query must already contain
+    /// presentation JSON produced by the report visualization step.
+    /// </summary>
     private static ReportSectionDto ToSectionDto(GeneratedSqlQuery query)
     {
         IReadOnlyList<ChartSpec> charts = Deserialize<IReadOnlyList<ChartSpec>>(query.ChartsJson) ?? [];
@@ -132,6 +163,10 @@ internal static class ReportMapping
             query.CreatedAt);
     }
 
+    /// <summary>
+    /// Best-effort deserialization for persisted snapshots. A malformed snapshot should not make
+    /// the report unreadable; callers treat <c>null</c> as "no renderable payload".
+    /// </summary>
     private static T? Deserialize<T>(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))

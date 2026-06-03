@@ -85,6 +85,8 @@ public sealed class AiSqlGenerator : IAiSqlGenerator
 
     private static string BuildUserPrompt(string question, AiSqlGenerationContext? context)
     {
+        // Initial reports only need the current business question. Follow-up turns receive bounded
+        // report context so the model can keep continuity without seeing the full conversation.
         if (context is null)
         {
             return $"Business question:\n{question}";
