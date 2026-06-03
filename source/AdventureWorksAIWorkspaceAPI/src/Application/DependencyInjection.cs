@@ -1,3 +1,5 @@
+using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
+using AdventureWorksAIWorkspaceAPI.Application.Reports;
 using Ardalis.GuardClauses;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +15,7 @@ public static class DependencyInjection
         Guard.Against.Null(services);
 
         services.AddSingleton(TypeAdapterConfig.GlobalSettings);
+        services.AddScoped<IReportChatPipeline, ReportChatPipeline>();
 
         return services;
     }

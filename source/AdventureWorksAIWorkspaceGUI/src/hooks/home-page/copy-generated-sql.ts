@@ -1,4 +1,4 @@
-import type { GeneratedSqlQueryDto } from '@/lib/report-api'
+import type { GeneratedSqlQueryDto } from '@/api/generated/model'
 import { toast } from '@/lib/toast'
 
 export async function copyGeneratedSqlQueries(

@@ -4,8 +4,8 @@ import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded'
 import CircularProgress from '@mui/material/CircularProgress'
 import { createElement } from 'react'
 
+import type { ReportSummaryDto } from '@/api/generated/model'
 import type { MenuDrawerItem } from '@/components/workspace/MenuDrawer'
-import type { ReportSummaryDto } from '@/lib/report-api'
 
 type BuildReportMenuItemsInput = {
   activeReportId: string | null

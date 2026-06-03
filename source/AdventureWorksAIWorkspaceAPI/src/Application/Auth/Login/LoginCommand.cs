@@ -11,10 +11,10 @@ public static class LoginCommandHandler
 {
     public static async Task<LoginResponse> Handle(
         LoginCommand command,
-        IUserService userService,
+        IAuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
-        LoginResult result = await userService.LoginAsync(command.Identifier, command.Password, cancellationToken);
+        LoginResult result = await authenticationService.LoginAsync(command.Identifier, command.Password, cancellationToken);
 
         return result.Outcome switch
         {

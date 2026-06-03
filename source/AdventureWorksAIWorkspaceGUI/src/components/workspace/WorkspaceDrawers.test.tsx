@@ -4,7 +4,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { ReportMessageDto } from '@/lib/report-api'
+import type { ReportMessageDto } from '@/api/generated/model'
 import { renderWithProviders } from '@/test/render-utils'
 
 import { ChatDrawer } from './ChatDrawer'

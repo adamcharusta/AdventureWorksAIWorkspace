@@ -4,8 +4,8 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 
+import type { ReportDetailsDto } from '@/api/generated/model'
 import type { ReportViewData } from '@/components/reports/ReportView'
-import type { ReportDetailsDto } from '@/lib/report-api'
 
 import { HomeWorkspaceState } from './HomeWorkspaceState'
 import { SavedReportPanel } from './SavedReportPanel'

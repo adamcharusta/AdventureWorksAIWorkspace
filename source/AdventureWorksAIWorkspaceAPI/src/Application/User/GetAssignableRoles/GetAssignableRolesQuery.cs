@@ -8,10 +8,10 @@ public static class GetAssignableRolesQueryHandler
 {
     public static async Task<GetAssignableRolesResponse> Handle(
         GetAssignableRolesQuery query,
-        IUserService userService,
+        IUserManagementService userManagementService,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> roles = await userService.GetAssignableRolesAsync(cancellationToken);
+        IReadOnlyList<string> roles = await userManagementService.GetAssignableRolesAsync(cancellationToken);
         return new GetAssignableRolesResponse(roles);
     }
 }

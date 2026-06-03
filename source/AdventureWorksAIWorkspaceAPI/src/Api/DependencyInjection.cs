@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using AdventureWorksAIWorkspaceAPI.Api.ExceptionHandling;
 using AdventureWorksAIWorkspaceAPI.Api.OpenApi;
 using AdventureWorksAIWorkspaceAPI.Application;
@@ -39,12 +40,21 @@ public static class DependencyInjection
         {
             options.CodeGeneration.AlwaysUseServiceLocationFor<IAdventureWorksQueryExecutor>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IAiSqlGenerator>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IReportChatPipeline>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IReportIntentClassifier>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IReportRepository>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<IReportVisualizer>();
             options.CodeGeneration.AlwaysUseServiceLocationFor<ISqlSafetyValidator>();
-            options.CodeGeneration.AlwaysUseServiceLocationFor<IUserService>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IAuthenticationService>();
+            options.CodeGeneration.AlwaysUseServiceLocationFor<IUserManagementService>();
             options.AddApplicationServices();
+        });
+
+        // Serialize enums as their string names so the API contract is stable and self-describing
+        // (for example "Ready" instead of 3). Wolverine HTTP and minimal APIs both use these options.
+        builder.Services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 
         builder.Services.AddEndpointsApiExplorer();
@@ -56,6 +66,9 @@ public static class DependencyInjection
             options.SupportNonNullableReferenceTypes();
             options.UseAllOfToExtendReferenceSchemas();
             options.SchemaFilter<RequireNonNullableSchemaFilter>();
+            // Mirror the runtime string-enum serialization in the OpenAPI document so generated
+            // clients see string enums instead of integers.
+            options.SchemaFilter<EnumAsStringSchemaFilter>();
         });
         builder.Services.AddWolverineHttp();
 

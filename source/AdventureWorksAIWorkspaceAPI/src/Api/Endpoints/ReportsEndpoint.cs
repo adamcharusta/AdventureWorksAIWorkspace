@@ -1,9 +1,8 @@
-using System.Security.Claims;
+using AdventureWorksAIWorkspaceAPI.Api.Authentication;
 using AdventureWorksAIWorkspaceAPI.Application.Reports;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.AddReportMessage;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.CreateReport;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.DeleteReport;
-using AdventureWorksAIWorkspaceAPI.Application.Reports.GenerateReport;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.GetReportDetails;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.GetReports;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.RenameReport;
@@ -17,8 +16,6 @@ namespace AdventureWorksAIWorkspaceAPI.Api.Endpoints;
 
 public static class ReportsEndpoint
 {
-    private const string SubjectClaimType = "sub";
-
     [WolverineGet(
         "/api/reports",
         Name = "GetReports",
@@ -35,7 +32,7 @@ public static class ReportsEndpoint
         CancellationToken cancellationToken)
     {
         GetReportsResponse response = await messageBus.InvokeAsync<GetReportsResponse>(
-            new GetReportsQuery(GetCurrentUserId(httpContext)),
+            new GetReportsQuery(httpContext.GetCurrentUserId()),
             cancellationToken);
 
         return TypedResults.Ok(response);
@@ -60,7 +57,7 @@ public static class ReportsEndpoint
         CancellationToken cancellationToken)
     {
         ReportDetailsDto response = await messageBus.InvokeAsync<ReportDetailsDto>(
-            new GetReportDetailsQuery(reportId, GetCurrentUserId(httpContext)),
+            new GetReportDetailsQuery(reportId, httpContext.GetCurrentUserId()),
             cancellationToken);
 
         return TypedResults.Ok(response);
@@ -85,7 +82,7 @@ public static class ReportsEndpoint
         CancellationToken cancellationToken)
     {
         ReportChatResponse response = await messageBus.InvokeAsync<ReportChatResponse>(
-            new CreateReportCommand(request.Message, GetCurrentUserId(httpContext)),
+            new CreateReportCommand(request.Message, httpContext.GetCurrentUserId()),
             cancellationToken);
 
         return TypedResults.Ok(response);
@@ -112,32 +109,8 @@ public static class ReportsEndpoint
         CancellationToken cancellationToken)
     {
         ReportChatResponse response = await messageBus.InvokeAsync<ReportChatResponse>(
-            new AddReportMessageCommand(reportId, request.Message, GetCurrentUserId(httpContext)),
+            new AddReportMessageCommand(reportId, request.Message, httpContext.GetCurrentUserId()),
             cancellationToken);
-
-        return TypedResults.Ok(response);
-    }
-
-    [WolverinePost(
-        "/api/reports/generate",
-        Name = "GenerateReport",
-        OperationId = "GenerateReport",
-        Summary = "Generates a report from a natural-language question.",
-        Description =
-            "Produces read-only SQL with the AI model, validates it for safety, and executes it against AdventureWorks. " +
-            "When the generated SQL is rejected, the response returns the SQL and the rejection reason without executing it.")]
-    [Tags("Reports")]
-    [Authorize]
-    [ProducesResponseType<GenerateReportResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public static async Task<Ok<GenerateReportResponse>> Generate(
-        [FromBody] GenerateReportCommand command,
-        IMessageBus messageBus,
-        CancellationToken cancellationToken)
-    {
-        GenerateReportResponse response =
-            await messageBus.InvokeAsync<GenerateReportResponse>(command, cancellationToken);
 
         return TypedResults.Ok(response);
     }
@@ -164,7 +137,7 @@ public static class ReportsEndpoint
         CancellationToken cancellationToken)
     {
         ReportSummaryDto response = await messageBus.InvokeAsync<ReportSummaryDto>(
-            new RenameReportCommand(reportId, request.Title, GetCurrentUserId(httpContext)),
+            new RenameReportCommand(reportId, request.Title, httpContext.GetCurrentUserId()),
             cancellationToken);
 
         return TypedResults.Ok(response);
@@ -190,13 +163,9 @@ public static class ReportsEndpoint
         CancellationToken cancellationToken)
     {
         await messageBus.InvokeAsync<DeleteReportResponse>(
-            new DeleteReportCommand(reportId, GetCurrentUserId(httpContext)),
+            new DeleteReportCommand(reportId, httpContext.GetCurrentUserId()),
             cancellationToken);
 
         return TypedResults.NoContent();
     }
-
-    private static string? GetCurrentUserId(HttpContext httpContext) =>
-        httpContext.User.FindFirstValue(SubjectClaimType)
-        ?? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 }

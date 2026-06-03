@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.AdventureWorks;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Ai;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
@@ -17,7 +16,7 @@ namespace AdventureWorksAIWorkspaceAPI.Infrastructure.Services;
 /// presentation when the model output is missing or unusable, so report generation never fails
 /// because of visualization.
 /// </summary>
-public sealed partial class AiReportVisualizer : IReportVisualizer
+public sealed class AiReportVisualizer : IReportVisualizer
 {
     private const int MaxSampleRows = 15;
 
@@ -26,12 +25,6 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
         "int", "bigint", "smallint", "tinyint", "decimal", "numeric",
         "money", "smallmoney", "float", "real"
     ];
-
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-    };
 
     private const string SystemPrompt =
         """
@@ -142,7 +135,7 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
 
     private ReportPresentation? TryParse(string content, TabularResult result)
     {
-        string json = ExtractJson(content);
+        string json = AiResponseParser.ExtractJsonObject(content);
         if (string.IsNullOrWhiteSpace(json))
         {
             return null;
@@ -151,7 +144,7 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
         PresentationJson? parsed;
         try
         {
-            parsed = JsonSerializer.Deserialize<PresentationJson>(json, JsonOptions);
+            parsed = JsonSerializer.Deserialize<PresentationJson>(json, AiResponseParser.JsonOptions);
         }
         catch (JsonException)
         {
@@ -241,24 +234,6 @@ public sealed partial class AiReportVisualizer : IReportVisualizer
 
     private static bool IsNumeric(string dataType) =>
         NumericDataTypes.Contains(dataType, StringComparer.OrdinalIgnoreCase);
-
-    private static string ExtractJson(string content)
-    {
-        string text = (content ?? string.Empty).Trim();
-
-        Match fence = CodeFenceRegex().Match(text);
-        if (fence.Success)
-        {
-            text = fence.Groups["body"].Value.Trim();
-        }
-
-        int start = text.IndexOf('{');
-        int end = text.LastIndexOf('}');
-        return start >= 0 && end > start ? text.Substring(start, end - start + 1) : text;
-    }
-
-    [GeneratedRegex("```(?:json)?\\s*(?<body>.+?)```", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
-    private static partial Regex CodeFenceRegex();
 
     private sealed record PresentationJson(
         [property: JsonPropertyName("title")] string? Title,

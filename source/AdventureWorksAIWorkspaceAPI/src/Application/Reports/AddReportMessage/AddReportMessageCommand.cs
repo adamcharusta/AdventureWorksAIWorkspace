@@ -13,11 +13,7 @@ public static class AddReportMessageCommandHandler
     public static async Task<ReportChatResponse> Handle(
         AddReportMessageCommand command,
         IReportRepository reportRepository,
-        IAiSqlGenerator sqlGenerator,
-        ISqlSafetyValidator sqlValidator,
-        IAdventureWorksQueryExecutor queryExecutor,
-        IReportVisualizer reportVisualizer,
-        IReportIntentClassifier intentClassifier,
+        IReportChatPipeline pipeline,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.CurrentUserId))
@@ -46,15 +42,11 @@ public static class AddReportMessageCommandHandler
         conversation.Messages.Add(userMessage);
         ReportChatWorkflow.UpdateTimestamps(report, conversation, now);
 
-        ReportChatResponse response = await ReportChatWorkflow.ProcessAsync(
+        ReportChatResponse response = await pipeline.ProcessAsync(
             report,
             userMessage,
-            sqlGenerator,
-            sqlValidator,
-            queryExecutor,
-            reportVisualizer,
             generateTitle: false,
-            intentClassifier,
+            classifyIntent: true,
             cancellationToken);
 
         await reportRepository.SaveChangesAsync(cancellationToken);

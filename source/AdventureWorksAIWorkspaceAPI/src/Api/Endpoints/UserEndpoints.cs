@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using AdventureWorksAIWorkspaceAPI.Api.Authentication;
 using AdventureWorksAIWorkspaceAPI.Application.User.CreateUser;
 using AdventureWorksAIWorkspaceAPI.Application.User.DeleteUser;
 using AdventureWorksAIWorkspaceAPI.Application.User.GetAssignableRoles;
@@ -14,8 +14,6 @@ namespace AdventureWorksAIWorkspaceAPI.Api.Endpoints;
 
 public static class UserEndpoints
 {
-    private const string SubjectClaimType = "sub";
-
     [WolverineGet(
         "/api/users/roles",
         Name = "GetAssignableRoles",
@@ -125,8 +123,7 @@ public static class UserEndpoints
         IMessageBus messageBus,
         CancellationToken cancellationToken)
     {
-        string? currentUserId = httpContext.User.FindFirstValue(SubjectClaimType)
-            ?? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        string? currentUserId = httpContext.GetCurrentUserId();
 
         await messageBus.InvokeAsync(new DeleteUserCommand(userId, currentUserId), cancellationToken);
         return TypedResults.NoContent();

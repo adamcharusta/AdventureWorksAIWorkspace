@@ -129,23 +129,6 @@ The project exposes `AddApiServices` through a static `DependencyInjection` clas
 
 API exceptions should be handled centrally through ASP.NET Core `IExceptionHandler` and returned as ProblemDetails responses. Application-level `NotFoundException` failures should map to HTTP 404 with a stable RFC 9110 `type`, user-facing `title`, and exception message in `detail`. Unexpected failures should be logged and returned as HTTP 500 without exposing internal exception details.
 
-### Reference Weather Forecast Vertical Slice
-
-The sample `GET /api/weather-forecasts` endpoint is the first reference vertical slice for the backend flow.
-
-The request flow is:
-
-1. Wolverine HTTP receives the request in the Api project.
-2. The endpoint sends `GetWeatherForecastsQuery` through Wolverine's message bus.
-3. FluentValidation validates the query in the Application project.
-4. The Application handler executes the use case.
-5. The handler calls the `IWeatherForecastProvider` abstraction.
-6. Infrastructure provides the sample implementation.
-7. Domain weather forecast values are mapped to application DTOs with Mapster.
-8. The API returns the DTO collection to the client.
-
-This endpoint is intentionally sample data only. Its purpose is to validate the CQRS, validation, mapping, dependency injection, Wolverine HTTP, Swagger, and test setup before business features are implemented.
-
 ### Application Database
 
 Stores application-owned data:
@@ -209,7 +192,7 @@ Responsible for:
 - Creating business summaries.
 - Supporting follow-up report refinement.
 
-The AI integration follows the same abstraction pattern as the reference Weather Forecast slice: AI capabilities are defined as Application-owned interfaces, and the concrete client lives in the Infrastructure project.
+The AI integration follows the standard abstraction pattern: AI capabilities are defined as Application-owned interfaces, and the concrete client lives in the Infrastructure project.
 
 - The Infrastructure client uses the official `OpenAI` .NET SDK, registered through a typed `HttpClient` so timeouts, resilience policies, and request logging are configured centrally.
 - Model configuration is bound through the options pattern (for example, `OpenAiOptions` with `ApiKey`, `Model`, `BaseUrl`, and `TimeoutSeconds`), mirroring `JwtOptions`.

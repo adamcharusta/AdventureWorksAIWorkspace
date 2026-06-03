@@ -750,7 +750,7 @@ Trade-offs:
 
 ### Status
 
-Accepted
+Superseded
 
 ### Context
 
@@ -782,6 +782,10 @@ Trade-offs:
 
 - The endpoint is sample-only and must not be treated as a product feature.
 - It should be removed or replaced once real reporting endpoints cover the same architectural flow.
+
+### Superseded Note
+
+2026-06-03: The Weather Forecasts reference slice (endpoint, domain, application, infrastructure, and tests) has been removed from the codebase now that the AI SQL generation and report endpoints cover the same architectural flow. The records below that mention `WeatherForecastDto` describe the historical state of the frontend tooling at the time those decisions were made.
 
 ---
 
@@ -970,9 +974,9 @@ For Vitest:
 
 1. Install MSW v2 and set up an `msw/node` server in `src/test/server.ts`.
 2. Start the server in `src/test/setup.ts` with `onUnhandledRequest: 'error'` and reset handlers after each test.
-3. Use the generated MSW handler factory (`getGetWeatherForecastsMockHandler`) for the happy path and ad-hoc `http.get` handlers for failure modes.
+3. Use the generated MSW handler factories per endpoint for the happy path and ad-hoc `http.get` handlers for failure modes.
 
-For Cypress component tests, keep using `cy.intercept`. Mounting an MSW Service Worker inside the Cypress component test runner would add infrastructure for no real benefit; `cy.intercept` is already runner-native and uses the generated `WeatherForecastDto` types for fixtures.
+For Cypress component tests, keep using `cy.intercept`. Mounting an MSW Service Worker inside the Cypress component test runner would add infrastructure for no real benefit; `cy.intercept` is already runner-native and uses the generated DTO types for fixtures.
 
 ### Consequences
 
@@ -1030,3 +1034,60 @@ Trade-offs:
 
 - Toasts are not visible in Vitest tests (no `<Toaster />` in the test render tree). Tests that need to assert toast output must wrap the subject under test with `<Toaster />`.
 - Cypress component tests would also need `<Toaster />` mounted to assert toast UI; the existing tests do not currently rely on toasts.
+
+---
+
+## Decision: Track refactoring work as a backlog and record refactoring direction
+
+### Date
+
+2026-06-03
+
+### Status
+
+Accepted
+
+### Context
+
+A codebase review identified several refactoring opportunities across the backend and frontend
+(duplication, a dead vertical slice, long methods, an oversized seeder, a hand-written API client that
+bypasses the adopted Orval generator, and inconsistent enum serialization). The project is in the
+planning and documentation phase, so the question is how to capture this work without changing
+production code prematurely.
+
+### Decision
+
+Record the refactoring opportunities as documentation first, before any implementation:
+
+1. Add a "Refactoring and Technical Debt" epic to [12-backlog.md](12-backlog.md) with `REF-` prefixed
+   items grouped by priority.
+2. Stage detailed, independently scoped issue drafts under "Refactoring Issue Drafts" in
+   [13-github-issues.md](13-github-issues.md).
+3. Treat every refactoring item as behavior-preserving: success is verified by the existing test
+   suites, not by new product behavior.
+
+The recorded refactoring direction is:
+
+- Prefer one canonical SQL generation path (remove the unused `GenerateReport` slice).
+- Prefer injectable, single-responsibility services over static helpers and god-classes
+  (`ReportChatWorkflow`, `UserService`).
+- Keep generated code as the single source of truth for the API client; the Reports feature should
+  use Orval like every other tag, and API enums should serialize as stable strings.
+- Centralize duplicated cross-cutting concerns (current-user-id resolution, AI response parsing,
+  `JsonSerializerOptions`).
+- Separate demo/seed data from database bootstrap.
+
+### Consequences
+
+Benefits:
+
+- Refactoring is visible, prioritized, and reviewable before any code changes.
+- Each item is small and independently shippable, with clear acceptance criteria.
+- The recorded direction keeps future refactoring consistent with existing decisions (Orval, layered
+  architecture).
+
+Trade-offs:
+
+- The drafts must be kept in sync as the code evolves; stale drafts should be closed or updated.
+- Some items depend on others (for example, the Reports Orval client depends on stable string enums),
+  so ordering matters during implementation.

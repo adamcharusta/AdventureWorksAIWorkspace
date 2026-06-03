@@ -1,7 +1,7 @@
 import type { PaletteMode } from '@mui/material/styles'
 
+import type { ReportSummaryDto } from '@/api/generated/model'
 import { MenuDrawer } from '@/components/workspace/MenuDrawer'
-import type { ReportSummaryDto } from '@/lib/report-api'
 
 import { buildHomeMenuItems } from './home-menu-items'
 

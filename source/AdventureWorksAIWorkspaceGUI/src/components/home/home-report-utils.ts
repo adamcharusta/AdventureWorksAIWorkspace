@@ -1,5 +1,5 @@
+import type { ReportDetailsDto } from '@/api/generated/model'
 import type { ReportViewData } from '@/components/reports/ReportView'
-import type { ReportDetailsDto } from '@/lib/report-api'
 
 export function formatDateTime(value: string): string {
   return new Intl.DateTimeFormat(undefined, {

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Ai;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
 using Ardalis.GuardClauses;
@@ -13,7 +12,7 @@ namespace AdventureWorksAIWorkspaceAPI.Infrastructure.Services;
 /// The prompt instructs the model to emit a single read-only SELECT, but the model is untrusted:
 /// the generated SQL must still pass <see cref="ISqlSafetyValidator"/> before it is executed.
 /// </remarks>
-public sealed partial class AiSqlGenerator : IAiSqlGenerator
+public sealed class AiSqlGenerator : IAiSqlGenerator
 {
     private const string SystemPrompt =
         """
@@ -78,7 +77,7 @@ public sealed partial class AiSqlGenerator : IAiSqlGenerator
 
         AiChatResult result = await _chatClient.CompleteAsync(messages, cancellationToken);
 
-        string sql = ExtractSql(result.Content);
+        string sql = AiResponseParser.StripCodeFence(result.Content);
 
         return new GeneratedSql(sql, result.InputTokens, result.OutputTokens);
     }
@@ -129,15 +128,4 @@ public sealed partial class AiSqlGenerator : IAiSqlGenerator
 
         return string.Join("\n\n", sections);
     }
-
-    private static string ExtractSql(string content)
-    {
-        string text = (content ?? string.Empty).Trim();
-
-        Match fence = CodeFenceRegex().Match(text);
-        return fence.Success ? fence.Groups["sql"].Value.Trim() : text;
-    }
-
-    [GeneratedRegex("```(?:sql)?\\s*(?<sql>.+?)```", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
-    private static partial Regex CodeFenceRegex();
 }

@@ -23,6 +23,7 @@ import type {
 import type {
   CreateUserCommand,
   CreateUserResponse,
+  GetAssignableRolesResponse,
   GetUsersResponse,
   HttpValidationProblemDetails,
   UpdateUserCommand,
@@ -32,6 +33,194 @@ import type {
 import { customFetch } from '../../customFetch'
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1]
+
+/**
+ * Returns all roles that can be assigned to users. Only accessible by Admin users.
+ * @summary Returns assignable user roles.
+ */
+export type getAssignableRolesResponse200 = {
+  data: GetAssignableRolesResponse
+  status: 200
+}
+
+export type getAssignableRolesResponse401 = {
+  data: void
+  status: 401
+}
+
+export type getAssignableRolesResponse403 = {
+  data: void
+  status: 403
+}
+
+export type getAssignableRolesResponseSuccess =
+  getAssignableRolesResponse200 & {
+    headers: Headers
+  }
+export type getAssignableRolesResponseError = (
+  | getAssignableRolesResponse401
+  | getAssignableRolesResponse403
+) & {
+  headers: Headers
+}
+
+export type getAssignableRolesResponse =
+  | getAssignableRolesResponseSuccess
+  | getAssignableRolesResponseError
+
+export const getGetAssignableRolesUrl = () => {
+  return `/api/users/roles`
+}
+
+export const getAssignableRoles = async (
+  options?: RequestInit,
+): Promise<getAssignableRolesResponse> => {
+  return customFetch<getAssignableRolesResponse>(getGetAssignableRolesUrl(), {
+    ...options,
+    method: 'GET',
+  })
+}
+
+export const getGetAssignableRolesQueryKey = () => {
+  return [`/api/users/roles`] as const
+}
+
+export const getGetAssignableRolesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAssignableRoles>>,
+  TError = void | void,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getAssignableRoles>>,
+      TError,
+      TData
+    >
+  >
+  request?: SecondParameter<typeof customFetch>
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = queryOptions?.queryKey ?? getGetAssignableRolesQueryKey()
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAssignableRoles>>
+  > = ({ signal }) => getAssignableRoles({ signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAssignableRoles>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAssignableRolesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAssignableRoles>>
+>
+export type GetAssignableRolesQueryError = void | void
+
+export function useGetAssignableRoles<
+  TData = Awaited<ReturnType<typeof getAssignableRoles>>,
+  TError = void | void,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssignableRoles>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAssignableRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getAssignableRoles>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+}
+export function useGetAssignableRoles<
+  TData = Awaited<ReturnType<typeof getAssignableRoles>>,
+  TError = void | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssignableRoles>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAssignableRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getAssignableRoles>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+}
+export function useGetAssignableRoles<
+  TData = Awaited<ReturnType<typeof getAssignableRoles>>,
+  TError = void | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssignableRoles>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+}
+/**
+ * @summary Returns assignable user roles.
+ */
+
+export function useGetAssignableRoles<
+  TData = Awaited<ReturnType<typeof getAssignableRoles>>,
+  TError = void | void,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssignableRoles>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetAssignableRolesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = queryOptions.queryKey
+
+  return query
+}
 
 /**
  * Returns all registered users with their ID, user name, email, and assigned role. Only accessible by Admin users.
@@ -468,7 +657,7 @@ export type deleteUserResponse204 = {
 }
 
 export type deleteUserResponse400 = {
-  data: HttpValidationProblemDetails
+  data: void
   status: 400
 }
 
@@ -518,7 +707,7 @@ export const deleteUser = async (
 }
 
 export const getDeleteUserMutationOptions = <
-  TError = HttpValidationProblemDetails | void | void | void,
+  TError = void | void | void | void,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -558,14 +747,14 @@ export const getDeleteUserMutationOptions = <
 export type DeleteUserMutationResult = NonNullable<
   Awaited<ReturnType<typeof deleteUser>>
 >
-export type DeleteUserMutationError =
-  HttpValidationProblemDetails | void | void | void
+
+export type DeleteUserMutationError = void | void | void | void
 
 /**
  * @summary Deletes an existing user account.
  */
 export const useDeleteUser = <
-  TError = HttpValidationProblemDetails | void | void | void,
+  TError = void | void | void | void,
   TContext = unknown,
 >(
   options?: {

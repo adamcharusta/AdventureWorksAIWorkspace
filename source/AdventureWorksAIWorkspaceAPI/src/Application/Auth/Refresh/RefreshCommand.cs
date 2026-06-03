@@ -11,10 +11,10 @@ public static class RefreshCommandHandler
 {
     public static async Task<RefreshResponse> Handle(
         RefreshCommand command,
-        IUserService userService,
+        IAuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
-        AuthTokens? tokens = await userService.RefreshAsync(command.RefreshToken, cancellationToken);
+        AuthTokens? tokens = await authenticationService.RefreshAsync(command.RefreshToken, cancellationToken);
 
         if (tokens is null)
         {

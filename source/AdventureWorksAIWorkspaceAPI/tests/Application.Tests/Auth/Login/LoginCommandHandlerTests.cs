@@ -7,18 +7,18 @@ namespace AdventureWorksAIWorkspaceAPI.Application.Tests.Auth.Login;
 
 public sealed class LoginCommandHandlerTests
 {
-    private readonly IUserService _userService = Substitute.For<IUserService>();
+    private readonly IAuthenticationService _authenticationService = Substitute.For<IAuthenticationService>();
 
     [Fact]
     public async Task Handle_WhenSuccess_ShouldReturnTokens()
     {
         var tokens = new AuthTokens("access", DateTime.UtcNow.AddHours(1), "refresh", DateTime.UtcNow.AddDays(7));
-        _userService
+        _authenticationService
             .LoginAsync("admin", "password", Arg.Any<CancellationToken>())
             .Returns(new LoginResult(LoginOutcome.Success, tokens));
 
         var response = await LoginCommandHandler.Handle(
-            new LoginCommand("admin", "password"), _userService, CancellationToken.None);
+            new LoginCommand("admin", "password"), _authenticationService, CancellationToken.None);
 
         response.AccessToken.Should().Be("access");
         response.RefreshToken.Should().Be("refresh");
@@ -27,12 +27,12 @@ public sealed class LoginCommandHandlerTests
     [Fact]
     public async Task Handle_WhenInvalidCredentials_ShouldThrowUnauthorizedException()
     {
-        _userService
+        _authenticationService
             .LoginAsync("admin", "wrong", Arg.Any<CancellationToken>())
             .Returns(new LoginResult(LoginOutcome.InvalidCredentials, null));
 
         var act = () => LoginCommandHandler.Handle(
-            new LoginCommand("admin", "wrong"), _userService, CancellationToken.None);
+            new LoginCommand("admin", "wrong"), _authenticationService, CancellationToken.None);
 
         await act.Should().ThrowAsync<UnauthorizedException>();
     }
@@ -40,12 +40,12 @@ public sealed class LoginCommandHandlerTests
     [Fact]
     public async Task Handle_WhenPasswordChangeRequired_ShouldThrowForbiddenException()
     {
-        _userService
+        _authenticationService
             .LoginAsync("admin", "password", Arg.Any<CancellationToken>())
             .Returns(new LoginResult(LoginOutcome.PasswordChangeRequired, null));
 
         var act = () => LoginCommandHandler.Handle(
-            new LoginCommand("admin", "password"), _userService, CancellationToken.None);
+            new LoginCommand("admin", "password"), _authenticationService, CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>();
     }

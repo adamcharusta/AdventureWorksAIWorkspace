@@ -11,10 +11,10 @@ public static class SetFirstPasswordCommandHandler
 {
     public static async Task<SetFirstPasswordResponse> Handle(
         SetFirstPasswordCommand command,
-        IUserService userService,
+        IAuthenticationService authenticationService,
         CancellationToken cancellationToken)
     {
-        SetFirstPasswordResult result = await userService.SetFirstPasswordAsync(
+        SetFirstPasswordResult result = await authenticationService.SetFirstPasswordAsync(
             command.Identifier, command.ConfirmNewPassword, command.NewPassword, cancellationToken);
 
         return result.Outcome switch

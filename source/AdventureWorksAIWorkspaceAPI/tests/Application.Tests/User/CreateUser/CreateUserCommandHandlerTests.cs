@@ -7,17 +7,17 @@ namespace AdventureWorksAIWorkspaceAPI.Application.Tests.User.CreateUser;
 
 public sealed class CreateUserCommandHandlerTests
 {
-    private readonly IUserService _userService = Substitute.For<IUserService>();
+    private readonly IUserManagementService _userManagementService = Substitute.For<IUserManagementService>();
 
     [Fact]
     public async Task Handle_WhenSuccess_ShouldReturnCreatedUser()
     {
-        _userService
+        _userManagementService
             .CreateUserAsync("john", "john@example.com", "User", Arg.Any<CancellationToken>())
             .Returns(new CreateUserResult(CreateUserOutcome.Success, "id-1", "john", "john@example.com", "User"));
 
         var response = await CreateUserCommandHandler.Handle(
-            new CreateUserCommand("john", "john@example.com", "User"), _userService, CancellationToken.None);
+            new CreateUserCommand("john", "john@example.com", "User"), _userManagementService, CancellationToken.None);
 
         response.UserId.Should().Be("id-1");
         response.UserName.Should().Be("john");
@@ -28,12 +28,12 @@ public sealed class CreateUserCommandHandlerTests
     [Fact]
     public async Task Handle_WhenUserAlreadyExists_ShouldThrowForbiddenException()
     {
-        _userService
+        _userManagementService
             .CreateUserAsync("john", "john@example.com", null, Arg.Any<CancellationToken>())
             .Returns(new CreateUserResult(CreateUserOutcome.UserAlreadyExists));
 
         var act = () => CreateUserCommandHandler.Handle(
-            new CreateUserCommand("john", "john@example.com"), _userService, CancellationToken.None);
+            new CreateUserCommand("john", "john@example.com"), _userManagementService, CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>();
     }
@@ -41,12 +41,12 @@ public sealed class CreateUserCommandHandlerTests
     [Fact]
     public async Task Handle_WhenInvalidRole_ShouldThrowForbiddenException()
     {
-        _userService
+        _userManagementService
             .CreateUserAsync("john", "john@example.com", "Invalid", Arg.Any<CancellationToken>())
             .Returns(new CreateUserResult(CreateUserOutcome.InvalidRole));
 
         var act = () => CreateUserCommandHandler.Handle(
-            new CreateUserCommand("john", "john@example.com", "Invalid"), _userService, CancellationToken.None);
+            new CreateUserCommand("john", "john@example.com", "Invalid"), _userManagementService, CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>().WithMessage("*Invalid*");
     }
@@ -54,12 +54,12 @@ public sealed class CreateUserCommandHandlerTests
     [Fact]
     public async Task Handle_WhenCreationFailed_ShouldThrowForbiddenException()
     {
-        _userService
+        _userManagementService
             .CreateUserAsync("john", "john@example.com", null, Arg.Any<CancellationToken>())
             .Returns(new CreateUserResult(CreateUserOutcome.CreationFailed, Errors: ["Something went wrong."]));
 
         var act = () => CreateUserCommandHandler.Handle(
-            new CreateUserCommand("john", "john@example.com"), _userService, CancellationToken.None);
+            new CreateUserCommand("john", "john@example.com"), _userManagementService, CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>().WithMessage("*Something went wrong*");
     }

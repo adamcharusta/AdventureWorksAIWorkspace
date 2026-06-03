@@ -1,15 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { getApiErrorMessage } from '@/lib/api-error'
+import type { ReportChatResponse } from '@/api/generated/model'
 import {
   addReportMessage,
   createReport,
-  type ReportChatResponse,
-  reportQueryKeys,
-} from '@/lib/report-api'
+  getGetReportDetailsQueryKey,
+  getGetReportsQueryKey,
+} from '@/api/generated/reports/reports'
+import { getApiErrorMessage } from '@/lib/api-error'
 import { toast } from '@/lib/toast'
 
-type ReportChatApiResponse = Awaited<ReturnType<typeof createReport>>
+// The generated fetch functions return a discriminated union of success/error responses. The custom
+// fetch mutator throws on non-2xx, so a resolved value is always the 200 variant; this shape captures
+// what the success handler needs from either mutation.
+type ReportChatSuccess = {
+  data: ReportChatResponse
+  status: number
+  headers: Headers
+}
 
 type UseHomeReportChatOptions = {
   activeReportId: string | null
@@ -24,24 +32,28 @@ export function useHomeReportChat({
 }: UseHomeReportChatOptions) {
   const queryClient = useQueryClient()
 
-  const handleReportChatSuccess = async (response: ReportChatApiResponse) => {
+  const handleReportChatSuccess = async (response: ReportChatSuccess) => {
     const report = response.data.report
 
     onReportReady(report.id)
     onSuccess()
 
-    queryClient.setQueryData(reportQueryKeys.details(report.id), {
+    queryClient.setQueryData(getGetReportDetailsQueryKey(report.id), {
       data: report,
       status: response.status,
       headers: response.headers,
     })
 
-    await queryClient.invalidateQueries({ queryKey: reportQueryKeys.list() })
+    await queryClient.invalidateQueries({ queryKey: getGetReportsQueryKey() })
   }
 
   const createReportMutation = useMutation({
     mutationFn: (message: string) => createReport({ message }),
-    onSuccess: handleReportChatSuccess,
+    onSuccess: (response) => {
+      if (response.status === 200) {
+        void handleReportChatSuccess(response)
+      }
+    },
     onError: (error) => {
       toast.error(
         getApiErrorMessage(error, 'The report could not be generated.'),
@@ -58,7 +70,11 @@ export function useHomeReportChat({
       reportId: string
       message: string
     }) => addReportMessage(reportId, { message }),
-    onSuccess: handleReportChatSuccess,
+    onSuccess: (response) => {
+      if (response.status === 200) {
+        void handleReportChatSuccess(response)
+      }
+    },
     onError: (error) => {
       toast.error(
         getApiErrorMessage(error, 'The report could not be refined.'),
@@ -70,16 +86,16 @@ export function useHomeReportChat({
   const submitMessage = async (
     message: string,
   ): Promise<ReportChatResponse> => {
-    if (activeReportId) {
-      const response = await addMessageMutation.mutateAsync({
-        reportId: activeReportId,
-        message,
-      })
+    const response = activeReportId
+      ? await addMessageMutation.mutateAsync({
+          reportId: activeReportId,
+          message,
+        })
+      : await createReportMutation.mutateAsync(message)
 
-      return response.data
+    if (response.status !== 200) {
+      throw new Error('The report request did not complete successfully.')
     }
-
-    const response = await createReportMutation.mutateAsync(message)
 
     return response.data
   }

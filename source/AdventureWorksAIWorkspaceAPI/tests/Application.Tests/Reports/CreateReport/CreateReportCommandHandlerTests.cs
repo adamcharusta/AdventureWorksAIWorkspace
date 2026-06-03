@@ -3,8 +3,8 @@ using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Ai;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Sql;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
+using AdventureWorksAIWorkspaceAPI.Application.Reports;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.CreateReport;
-using AdventureWorksAIWorkspaceAPI.Application.Reports.GenerateReport;
 using AdventureWorksAIWorkspaceAPI.Domain.Reports;
 
 namespace AdventureWorksAIWorkspaceAPI.Application.Tests.Reports.CreateReport;
@@ -16,6 +16,10 @@ public sealed class CreateReportCommandHandlerTests
     private readonly ISqlSafetyValidator _sqlValidator = Substitute.For<ISqlSafetyValidator>();
     private readonly IAdventureWorksQueryExecutor _queryExecutor = Substitute.For<IAdventureWorksQueryExecutor>();
     private readonly IReportVisualizer _reportVisualizer = Substitute.For<IReportVisualizer>();
+    private readonly IReportIntentClassifier _intentClassifier = Substitute.For<IReportIntentClassifier>();
+
+    private IReportChatPipeline Pipeline => new ReportChatPipeline(
+        _sqlGenerator, _sqlValidator, _queryExecutor, _reportVisualizer, _intentClassifier);
 
     [Fact]
     public async Task Handle_WhenSqlExecutes_ShouldPersistReportConversationAndSql()
@@ -54,10 +58,7 @@ public sealed class CreateReportCommandHandlerTests
         var response = await CreateReportCommandHandler.Handle(
             new CreateReportCommand("top products", "user-1"),
             _reportRepository,
-            _sqlGenerator,
-            _sqlValidator,
-            _queryExecutor,
-            _reportVisualizer,
+            Pipeline,
             CancellationToken.None);
 
         savedReport.Should().NotBeNull();

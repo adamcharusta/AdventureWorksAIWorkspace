@@ -1,8 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import {
+  getGetReportDetailsQueryKey,
+  getGetReportsQueryKey,
+  getReportDetails,
+  getReports,
+} from '@/api/generated/reports/reports'
 import { createReportViewData } from '@/components/home/home-report-utils'
-import { getReportDetails, getReports, reportQueryKeys } from '@/lib/report-api'
 
 export function useHomeReportSelection() {
   const queryClient = useQueryClient()
@@ -10,7 +15,7 @@ export function useHomeReportSelection() {
   const [isNewReportSelected, setIsNewReportSelected] = useState(false)
 
   const reportsQuery = useQuery({
-    queryKey: reportQueryKeys.list(),
+    queryKey: getGetReportsQueryKey(),
     queryFn: ({ signal }) => getReports({ signal }),
     retry: false,
   })
@@ -26,9 +31,7 @@ export function useHomeReportSelection() {
     reports.find((item) => item.id === activeReportId) ?? null
 
   const reportDetailsQuery = useQuery({
-    queryKey: activeReportId
-      ? reportQueryKeys.details(activeReportId)
-      : [...reportQueryKeys.all, 'details'],
+    queryKey: getGetReportDetailsQueryKey(activeReportId ?? undefined),
     queryFn: ({ signal }) => getReportDetails(activeReportId!, { signal }),
     enabled: Boolean(activeReportId),
     retry: false,
@@ -61,7 +64,7 @@ export function useHomeReportSelection() {
   }
 
   const refreshReports = () => {
-    void queryClient.invalidateQueries({ queryKey: reportQueryKeys.list() })
+    void queryClient.invalidateQueries({ queryKey: getGetReportsQueryKey() })
   }
 
   const refreshActiveReport = () => {
@@ -70,7 +73,7 @@ export function useHomeReportSelection() {
     }
 
     void queryClient.invalidateQueries({
-      queryKey: reportQueryKeys.details(activeReportId),
+      queryKey: getGetReportDetailsQueryKey(activeReportId),
     })
   }
 

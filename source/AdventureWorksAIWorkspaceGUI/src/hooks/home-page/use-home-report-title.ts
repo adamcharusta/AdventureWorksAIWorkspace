@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 
-import { getApiErrorMessage } from '@/lib/api-error'
+import type { ReportDetailsDto, ReportSummaryDto } from '@/api/generated/model'
 import {
-  renameReportTitle,
-  type ReportDetailsDto,
-  reportQueryKeys,
-  type ReportSummaryDto,
-} from '@/lib/report-api'
+  getGetReportDetailsQueryKey,
+  getGetReportsQueryKey,
+  renameReport,
+} from '@/api/generated/reports/reports'
+import { getApiErrorMessage } from '@/lib/api-error'
 import { toast } from '@/lib/toast'
 
 type UseHomeReportTitleOptions = {
@@ -27,16 +27,20 @@ export function useHomeReportTitle({
 
   const renameReportMutation = useMutation({
     mutationFn: ({ reportId, title }: { reportId: string; title: string }) =>
-      renameReportTitle(reportId, { title }),
+      renameReport(reportId, { title }),
     onSuccess: async (response, variables) => {
+      if (response.status !== 200) {
+        return
+      }
+
       setIsEditingTitle(false)
       setTitleDraft(response.data.title)
       toast.success('Report title has been updated.', 'Reports')
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: reportQueryKeys.list() }),
+        queryClient.invalidateQueries({ queryKey: getGetReportsQueryKey() }),
         queryClient.invalidateQueries({
-          queryKey: reportQueryKeys.details(variables.reportId),
+          queryKey: getGetReportDetailsQueryKey(variables.reportId),
         }),
       ])
     },

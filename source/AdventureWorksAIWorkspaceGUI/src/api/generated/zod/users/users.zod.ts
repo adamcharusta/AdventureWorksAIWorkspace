@@ -7,6 +7,14 @@
 import * as zod from 'zod'
 
 /**
+ * Returns all roles that can be assigned to users. Only accessible by Admin users.
+ * @summary Returns assignable user roles.
+ */
+export const getAssignableRolesResponse = zod.object({
+  roles: zod.array(zod.string()),
+})
+
+/**
  * Returns all registered users with their ID, user name, email, and assigned role. Only accessible by Admin users.
  * @summary Returns a list of all users.
  */

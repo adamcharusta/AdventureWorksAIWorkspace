@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
-import { getApiErrorMessage } from '@/lib/api-error'
+import type { ReportDetailsDto, ReportSummaryDto } from '@/api/generated/model'
 import {
   deleteReport,
-  type ReportDetailsDto,
-  reportQueryKeys,
-  type ReportSummaryDto,
-} from '@/lib/report-api'
+  getGetReportDetailsQueryKey,
+  getGetReportsQueryKey,
+} from '@/api/generated/reports/reports'
+import { getApiErrorMessage } from '@/lib/api-error'
 import { toast } from '@/lib/toast'
 
 type UseHomeReportDeleteOptions = {
@@ -34,9 +34,9 @@ export function useHomeReportDelete({
       toast.success('Report has been deleted.', 'Reports')
 
       queryClient.removeQueries({
-        queryKey: reportQueryKeys.details(reportId),
+        queryKey: getGetReportDetailsQueryKey(reportId),
       })
-      await queryClient.invalidateQueries({ queryKey: reportQueryKeys.list() })
+      await queryClient.invalidateQueries({ queryKey: getGetReportsQueryKey() })
     },
     onError: (error) => {
       toast.error(

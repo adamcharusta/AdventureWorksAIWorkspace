@@ -11,9 +11,20 @@ import type { RequestHandlerOptions } from 'msw'
 
 import type {
   CreateUserResponse,
+  GetAssignableRolesResponse,
   GetUsersResponse,
   UpdateUserResponse,
 } from '.././model'
+
+export const getGetAssignableRolesResponseMock = (
+  overrideResponse: Partial<GetAssignableRolesResponse> = {},
+): GetAssignableRolesResponse => ({
+  roles: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+})
 
 export const getGetUsersResponseMock = (
   overrideResponse: Partial<GetUsersResponse> = {},
@@ -49,6 +60,34 @@ export const getUpdateUserResponseMock = (
   role: faker.string.alpha({ length: { min: 10, max: 20 } }),
   ...overrideResponse,
 })
+
+export const getGetAssignableRolesMockHandler = (
+  overrideResponse?:
+    | GetAssignableRolesResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<GetAssignableRolesResponse> | GetAssignableRolesResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    '*/api/users/roles',
+    async (info) => {
+      await delay(0)
+
+      return new HttpResponse(
+        JSON.stringify(
+          overrideResponse !== undefined
+            ? typeof overrideResponse === 'function'
+              ? await overrideResponse(info)
+              : overrideResponse
+            : getGetAssignableRolesResponseMock(),
+        ),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      )
+    },
+    options,
+  )
+}
 
 export const getGetUsersMockHandler = (
   overrideResponse?:
@@ -133,18 +172,29 @@ export const getUpdateUserMockHandler = (
     options,
   )
 }
-export const getDeleteUserMockHandler = (options?: RequestHandlerOptions) => {
+
+export const getDeleteUserMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<void> | void),
+  options?: RequestHandlerOptions,
+) => {
   return http.delete(
     '*/api/users/:userId',
-    async () => {
+    async (info) => {
       await delay(0)
-
+      if (typeof overrideResponse === 'function') {
+        await overrideResponse(info)
+      }
       return new HttpResponse(null, { status: 204 })
     },
     options,
   )
 }
 export const getUsersMock = () => [
+  getGetAssignableRolesMockHandler(),
   getGetUsersMockHandler(),
   getCreateUserMockHandler(),
   getUpdateUserMockHandler(),

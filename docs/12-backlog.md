@@ -106,3 +106,33 @@ This document contains the initial product backlog for AdventureWorksAIWorkspace
 - [ ] Define scheduled reports concept.
 - [ ] Define manual chart editing concept.
 - [ ] Define semantic layer concept.
+
+## Epic: Refactoring and Technical Debt
+
+These items capture refactoring opportunities identified during a codebase review. They do not
+add product behavior; they reduce duplication, improve separation of concerns, and align the code
+with decisions already recorded in [14-technical-decisions.md](14-technical-decisions.md). Detailed
+issue drafts are staged in [13-github-issues.md](13-github-issues.md) (prefixed `REF-`).
+
+### High priority
+
+- [x] REF-1: Remove the unused `GenerateReport` vertical slice (backend).
+- [x] REF-2: Convert `ReportChatWorkflow` into an injectable service and decompose `ProcessAsync` (backend).
+- [x] REF-3: Extract the sample-report seed data out of `AppDbContextInitializer` (backend).
+- [x] REF-4: Generate the Reports API client with Orval instead of the hand-written `report-api.ts` (frontend). The Reports feature now uses the generated `reports` tag and model types; `report-api.ts` is removed and `report-types.ts` re-exports the generated model.
+- [x] REF-6: Register a global `JsonStringEnumConverter` for API responses (backend / API contract).
+
+### Medium priority
+
+- [x] REF-7: Extract a shared current-user-id resolution helper for endpoints (backend).
+- [x] REF-8: Split `UserService` by responsibility (token, authentication, user management) (backend).
+- [x] REF-9: Extract shared AI response parsing and `JsonSerializerOptions` helpers (backend).
+- [x] REF-10: Decompose the large `ChatDrawer.tsx` and `AdminPanelPage.tsx` components (frontend).
+
+### Low priority
+
+- [ ] REF-11: Replace manual JSON round-tripping in report persistence with EF Core value converters (backend). _Will not do as specified: holding typed `Result`/`Charts` on the `Report` entity would make the Domain layer depend on the Application DTOs `TabularResult`/`ChartSpec`, which violates the enforced Domain → Application layering (`LayerDependencyTests`). Storing JSON in Domain and converting in `ReportMapping` (Application) is the correct pattern for this architecture. The duplicated `JsonSerializerOptions` part was already addressed by REF-9._
+
+### Cleanup
+
+- [x] REF-5: Regenerate the Orval client to drop the stale `weather-forecasts` tag (frontend). Regenerated against the running API; the `weather-forecasts` tag is gone and `reports`/`health` tags are now generated with string enums.

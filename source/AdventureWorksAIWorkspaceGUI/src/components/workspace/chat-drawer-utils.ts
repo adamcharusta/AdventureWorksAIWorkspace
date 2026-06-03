@@ -10,7 +10,7 @@ import type {
   ReportChatResponse,
   ReportMessageDto,
   ReportMessageRole,
-} from '@/lib/report-api'
+} from '@/api/generated/model'
 
 export const chatUsers = {
   assistant: {
@@ -36,6 +36,12 @@ const messageRoleMap: Record<string, ChatRole> = {
   Assistant: 'assistant',
   System: 'system',
   User: 'user',
+}
+
+export function getChatMessagesKey(messages: ChatMessage[]): string {
+  return messages
+    .map((message) => `${message.id}:${message.updatedAt ?? message.createdAt}`)
+    .join('|')
 }
 
 export function mapReportMessagesToChatMessages(

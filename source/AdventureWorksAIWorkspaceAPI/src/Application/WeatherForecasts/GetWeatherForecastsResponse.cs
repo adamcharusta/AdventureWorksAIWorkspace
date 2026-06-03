@@ -1,3 +1,0 @@
-namespace AdventureWorksAIWorkspaceAPI.Application.WeatherForecasts;
-
-public sealed record GetWeatherForecastsResponse(IReadOnlyList<WeatherForecastDto> Forecasts);

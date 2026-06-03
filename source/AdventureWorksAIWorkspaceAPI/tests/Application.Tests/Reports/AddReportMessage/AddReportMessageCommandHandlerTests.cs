@@ -4,8 +4,8 @@ using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Sql;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Exceptions;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
+using AdventureWorksAIWorkspaceAPI.Application.Reports;
 using AdventureWorksAIWorkspaceAPI.Application.Reports.AddReportMessage;
-using AdventureWorksAIWorkspaceAPI.Application.Reports.GenerateReport;
 using AdventureWorksAIWorkspaceAPI.Domain.Reports;
 
 namespace AdventureWorksAIWorkspaceAPI.Application.Tests.Reports.AddReportMessage;
@@ -18,6 +18,9 @@ public sealed class AddReportMessageCommandHandlerTests
     private readonly IAdventureWorksQueryExecutor _queryExecutor = Substitute.For<IAdventureWorksQueryExecutor>();
     private readonly IReportVisualizer _reportVisualizer = Substitute.For<IReportVisualizer>();
     private readonly IReportIntentClassifier _intentClassifier = Substitute.For<IReportIntentClassifier>();
+
+    private IReportChatPipeline Pipeline => new ReportChatPipeline(
+        _sqlGenerator, _sqlValidator, _queryExecutor, _reportVisualizer, _intentClassifier);
 
     [Fact]
     public async Task Handle_WhenReportExists_ShouldAppendMessagesAndPersistSql()
@@ -52,11 +55,7 @@ public sealed class AddReportMessageCommandHandlerTests
         var response = await AddReportMessageCommandHandler.Handle(
             new AddReportMessageCommand("report-1", "show revenue by month", "user-1"),
             _reportRepository,
-            _sqlGenerator,
-            _sqlValidator,
-            _queryExecutor,
-            _reportVisualizer,
-            _intentClassifier,
+            Pipeline,
             CancellationToken.None);
 
         report.Conversation!.Messages.Should().HaveCount(3);
@@ -89,11 +88,7 @@ public sealed class AddReportMessageCommandHandlerTests
         var act = () => AddReportMessageCommandHandler.Handle(
             new AddReportMessageCommand("report-1", "follow up", "user-1"),
             _reportRepository,
-            _sqlGenerator,
-            _sqlValidator,
-            _queryExecutor,
-            _reportVisualizer,
-            _intentClassifier,
+            Pipeline,
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -124,11 +119,7 @@ public sealed class AddReportMessageCommandHandlerTests
         var response = await AddReportMessageCommandHandler.Handle(
             new AddReportMessageCommand("report-1", "retry please", "user-1"),
             _reportRepository,
-            _sqlGenerator,
-            _sqlValidator,
-            _queryExecutor,
-            _reportVisualizer,
-            _intentClassifier,
+            Pipeline,
             CancellationToken.None);
 
         response.Outcome.Should().Be(ReportOutcome.Executed);
@@ -174,11 +165,7 @@ public sealed class AddReportMessageCommandHandlerTests
         var response = await AddReportMessageCommandHandler.Handle(
             new AddReportMessageCommand("report-1", "retry please", "user-1"),
             _reportRepository,
-            _sqlGenerator,
-            _sqlValidator,
-            _queryExecutor,
-            _reportVisualizer,
-            _intentClassifier,
+            Pipeline,
             CancellationToken.None);
 
         response.Outcome.Should().Be(ReportOutcome.Executed);
@@ -211,11 +198,7 @@ public sealed class AddReportMessageCommandHandlerTests
         var response = await AddReportMessageCommandHandler.Handle(
             new AddReportMessageCommand("report-1", "retry please", "user-1"),
             _reportRepository,
-            _sqlGenerator,
-            _sqlValidator,
-            _queryExecutor,
-            _reportVisualizer,
-            _intentClassifier,
+            Pipeline,
             CancellationToken.None);
 
         response.Outcome.Should().Be(ReportOutcome.ExecutionFailed);
@@ -256,11 +239,7 @@ public sealed class AddReportMessageCommandHandlerTests
         var response = await AddReportMessageCommandHandler.Handle(
             new AddReportMessageCommand("report-1", "hide the account number", "user-1"),
             _reportRepository,
-            _sqlGenerator,
-            _sqlValidator,
-            _queryExecutor,
-            _reportVisualizer,
-            _intentClassifier,
+            Pipeline,
             CancellationToken.None);
 
         response.Outcome.Should().Be(ReportOutcome.Executed);

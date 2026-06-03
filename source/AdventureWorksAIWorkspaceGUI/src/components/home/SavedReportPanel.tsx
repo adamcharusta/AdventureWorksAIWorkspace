@@ -2,11 +2,11 @@ import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
+import type { ReportDetailsDto } from '@/api/generated/model'
 import {
   ReportView,
   type ReportViewData,
 } from '@/components/reports/ReportView'
-import type { ReportDetailsDto } from '@/lib/report-api'
 
 import { formatDateTime } from './home-report-utils'
 

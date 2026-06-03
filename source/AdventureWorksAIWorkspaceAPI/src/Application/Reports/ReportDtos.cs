@@ -1,6 +1,5 @@
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.AdventureWorks;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Dtos.Charts;
-using AdventureWorksAIWorkspaceAPI.Application.Reports.GenerateReport;
 using AdventureWorksAIWorkspaceAPI.Domain.Reports;
 
 namespace AdventureWorksAIWorkspaceAPI.Application.Reports;

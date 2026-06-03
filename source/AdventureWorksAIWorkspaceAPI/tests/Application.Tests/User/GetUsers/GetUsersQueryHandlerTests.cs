@@ -6,7 +6,7 @@ namespace AdventureWorksAIWorkspaceAPI.Application.Tests.User.GetUsers;
 
 public sealed class GetUsersQueryHandlerTests
 {
-    private readonly IUserService _userService = Substitute.For<IUserService>();
+    private readonly IUserManagementService _userManagementService = Substitute.For<IUserManagementService>();
 
     [Fact]
     public async Task Handle_ShouldReturnUsersFromService()
@@ -16,12 +16,12 @@ public sealed class GetUsersQueryHandlerTests
             new("id-1", "admin", "admin@example.com", "Admin"),
             new("id-2", "john", "john@example.com", "User")
         };
-        _userService
+        _userManagementService
             .GetUsersAsync(Arg.Any<CancellationToken>())
             .Returns(users);
 
         var response = await GetUsersQueryHandler.Handle(
-            new GetUsersQuery(), _userService, CancellationToken.None);
+            new GetUsersQuery(), _userManagementService, CancellationToken.None);
 
         response.Users.Should().HaveCount(2);
         response.Users[0].Id.Should().Be("id-1");
@@ -33,12 +33,12 @@ public sealed class GetUsersQueryHandlerTests
     [Fact]
     public async Task Handle_WhenNoUsers_ShouldReturnEmptyList()
     {
-        _userService
+        _userManagementService
             .GetUsersAsync(Arg.Any<CancellationToken>())
             .Returns(new List<UserDto>());
 
         var response = await GetUsersQueryHandler.Handle(
-            new GetUsersQuery(), _userService, CancellationToken.None);
+            new GetUsersQuery(), _userManagementService, CancellationToken.None);
 
         response.Users.Should().BeEmpty();
     }

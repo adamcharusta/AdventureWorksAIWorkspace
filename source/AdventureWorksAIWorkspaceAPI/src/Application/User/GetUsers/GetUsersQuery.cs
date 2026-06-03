@@ -10,10 +10,10 @@ public static class GetUsersQueryHandler
 {
     public static async Task<GetUsersResponse> Handle(
         GetUsersQuery query,
-        IUserService userService,
+        IUserManagementService userManagementService,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<UserDto> users = await userService.GetUsersAsync(cancellationToken);
+        IReadOnlyList<UserDto> users = await userManagementService.GetUsersAsync(cancellationToken);
         return new GetUsersResponse(users);
     }
 }

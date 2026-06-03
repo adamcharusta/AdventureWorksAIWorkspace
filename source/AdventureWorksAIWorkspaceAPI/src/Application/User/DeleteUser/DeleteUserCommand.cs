@@ -10,7 +10,7 @@ public static class DeleteUserCommandHandler
 {
     public static async Task Handle(
         DeleteUserCommand command,
-        IUserService userService,
+        IUserManagementService userManagementService,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.CurrentUserId))
@@ -23,7 +23,7 @@ public static class DeleteUserCommandHandler
             throw new ForbiddenException("Administrators cannot delete their own user account.");
         }
 
-        DeleteUserResult result = await userService.DeleteUserAsync(command.UserId, cancellationToken);
+        DeleteUserResult result = await userManagementService.DeleteUserAsync(command.UserId, cancellationToken);
 
         switch (result.Outcome)
         {

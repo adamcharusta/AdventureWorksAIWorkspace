@@ -11,10 +11,10 @@ public static class CreateUserCommandHandler
 {
     public static async Task<CreateUserResponse> Handle(
         CreateUserCommand command,
-        IUserService userService,
+        IUserManagementService userManagementService,
         CancellationToken cancellationToken)
     {
-        CreateUserResult result = await userService.CreateUserAsync(
+        CreateUserResult result = await userManagementService.CreateUserAsync(
             command.UserName, command.Email, command.Role, cancellationToken);
 
         return result.Outcome switch

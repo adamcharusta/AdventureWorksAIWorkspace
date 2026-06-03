@@ -569,3 +569,451 @@ Let the model attach an optional, free-text **conclusions** block to a report tu
 - backend
 - frontend
 - data-model
+
+---
+
+# Refactoring Issue Drafts
+
+The following drafts come from a codebase refactoring review. They are technical-debt items: they
+change internal structure only and must preserve existing behavior, verified by the existing test
+suites. They are prefixed `REF-` and tracked under the "Refactoring and Technical Debt" epic in
+[12-backlog.md](12-backlog.md). The supporting decision is "Track refactoring work as a backlog and
+record refactoring direction" in [14-technical-decisions.md](14-technical-decisions.md).
+
+---
+
+## Issue: REF-1 Remove the unused GenerateReport vertical slice
+
+### Context
+
+`GenerateReport` (`/api/reports/generate`, `GenerateReportCommand`, its handler, `GenerateReportResponse`,
+validator, and `ReportOutcome` usage there) was introduced as a transitional reference slice. The
+persisted report chat flow (`CreateReport` and `AddReportMessage` driving `ReportChatWorkflow`) now
+covers the same generate-validate-execute path more completely, including persistence and retries.
+The frontend does not call `/api/reports/generate` anywhere.
+
+### Goal
+
+Remove the dead slice so there is one canonical SQL generation path.
+
+### Scope
+
+- Delete the `Reports/GenerateReport` application folder and the `Generate` endpoint method.
+- Delete the related tests (`GenerateReport` handler/validator tests).
+- Confirm `ReportOutcome` is still owned by the persisted chat flow and not orphaned.
+
+### Out of Scope
+
+- Any change to the persisted report chat flow behavior.
+
+### Acceptance Criteria
+
+- [ ] `/api/reports/generate` and its command/handler/response/validator are removed.
+- [ ] Related tests are removed; the remaining suites build and pass.
+- [ ] `GenerateReportResponse` does not break the OpenAPI document or frontend build.
+- [ ] No references to the removed slice remain in code.
+
+### Notes
+
+- Verify nothing else (e.g. Wolverine codegen tests) asserts on the generate endpoint.
+
+### Labels
+
+- refactoring
+- backend
+- tech-debt
+
+---
+
+## Issue: REF-2 Convert ReportChatWorkflow into an injectable service and decompose ProcessAsync
+
+### Context
+
+`ReportChatWorkflow` is an `internal static` class whose `ProcessAsync` method takes nine parameters,
+including five collaborators (`IAiSqlGenerator`, `ISqlSafetyValidator`, `IAdventureWorksQueryExecutor`,
+`IReportVisualizer`, `IReportIntentClassifier`). `CreateReportCommandHandler` and
+`AddReportMessageCommandHandler` both inject the same cluster of services and forward them (a data
+clump). `ProcessAsync` itself is ~170 lines with a retry loop and three near-duplicate failure blocks.
+
+### Goal
+
+Make the workflow an injectable, unit-testable service with smaller methods, and shrink the handler
+signatures.
+
+### Scope
+
+- Introduce an injectable workflow service (for example `IReportChatPipeline`) registered in DI,
+  holding the collaborators as constructor dependencies.
+- Reduce handler signatures so they depend on the pipeline plus the repository.
+- Decompose `ProcessAsync` into focused private methods (for example `ApplyRejection`,
+  `ApplyExecutionFailure`, `ApplySuccess`, and a single-attempt step), removing the duplicated
+  "set Failed / null out Result+Charts / return" blocks.
+
+### Out of Scope
+
+- Changing retry count, prompts, or the refine-target behavior.
+
+### Acceptance Criteria
+
+- [ ] The workflow is a registered service; handlers no longer pass five services through.
+- [ ] `ProcessAsync` is broken into small methods with no duplicated failure blocks.
+- [ ] Existing report flow tests pass unchanged (behavior preserved).
+- [ ] Layer dependency architecture tests still pass.
+
+### Notes
+
+- Keep `MaxSqlAttempts` and context-trimming constants as configuration on the service.
+
+### Labels
+
+- refactoring
+- backend
+- tech-debt
+
+---
+
+## Issue: REF-3 Extract sample-report seed data out of AppDbContextInitializer
+
+### Context
+
+`AppDbContextInitializer` is ~463 lines, dominated by `SeedSampleReportForAdminAsync` (~265 lines of
+hard-coded sample report content). This mixes schema/role/admin bootstrap with demo data.
+
+### Goal
+
+Separate demo data from the database bootstrap so the initializer stays focused.
+
+### Scope
+
+- Move the sample-report content into a dedicated provider or an embedded resource (for example JSON).
+- Keep migration, role seeding, and initial-admin seeding in the initializer.
+- Gate sample-report seeding behind a clear, configurable switch if it is environment-specific.
+
+### Out of Scope
+
+- Changing what the sample report contains.
+
+### Acceptance Criteria
+
+- [ ] `AppDbContextInitializer` no longer hard-codes the sample report body.
+- [ ] Sample-report seeding still works in the environments where it is enabled.
+- [ ] Initializer size is materially reduced and responsibilities are separated.
+
+### Labels
+
+- refactoring
+- backend
+- tech-debt
+
+---
+
+## Issue: REF-4 Generate the Reports API client with Orval
+
+### Context
+
+The project adopted Orval to generate typed clients, mocks, and Zod schemas per API tag. The
+`authentication` and `users` tags are generated, but the Reports feature uses a hand-written
+`src/lib/report-api.ts` (~190 lines of DTO types, fetch functions, and a query-key factory) that must
+be kept in sync with the backend by hand. Reports is the central feature, yet it is the only one that
+bypasses the generator.
+
+### Goal
+
+Generate the Reports client from the OpenAPI document like the other tags, removing hand-maintained
+duplication.
+
+### Scope
+
+- Ensure the backend `Reports` endpoints are tagged and described well enough for generation
+  (status codes, response types, nullability).
+- Regenerate with Orval and migrate Reports consumers to the generated hooks/types.
+- Remove the hand-written `report-api.ts` types and fetch functions; keep only genuinely custom glue.
+
+### Out of Scope
+
+- Changing report endpoint behavior or response shapes (unless required for clean generation, tracked
+  separately).
+
+### Acceptance Criteria
+
+- [ ] A generated `reports` tag exists under `src/api/generated/`.
+- [ ] Reports consumers use generated hooks/types; `report-api.ts` duplication is removed.
+- [ ] Frontend tests (Vitest, Cypress) pass with the generated client/mocks.
+
+### Notes
+
+- Depends on REF-6 for clean enum typing.
+- Coordinate with the Orval and custom-fetch-mutator decisions already recorded.
+
+### Labels
+
+- refactoring
+- frontend
+- tech-debt
+
+---
+
+## Issue: REF-5 Regenerate the Orval client to drop the stale weather-forecasts tag
+
+### Context
+
+The Weather Forecasts backend slice was removed, but the generated frontend client still contains a
+`src/api/generated/weather-forecasts/` tag. The generated client was not refreshed.
+
+### Goal
+
+Bring the generated client back in sync with the current OpenAPI document.
+
+### Scope
+
+- Run the OpenAPI generation (`npm run api:gen`) against the current backend.
+- Remove the stale `weather-forecasts` generated artifacts.
+
+### Out of Scope
+
+- Any other client regeneration changes unrelated to the removal.
+
+### Acceptance Criteria
+
+- [ ] `src/api/generated/weather-forecasts/` no longer exists.
+- [ ] No code references the removed generated tag.
+- [ ] Frontend builds and tests pass.
+
+### Notes
+
+- Quick cleanup; closes a loose end from the Weather Forecasts removal.
+
+### Labels
+
+- refactoring
+- frontend
+- cleanup
+
+---
+
+## Issue: REF-6 Register a global JsonStringEnumConverter for API responses
+
+### Context
+
+The API does not register a global `JsonStringEnumConverter` for HTTP JSON, so enums such as
+`ReportStatus`, `ReportMessageRole`, `SqlValidationStatus`, and `ReportOutcome` serialize as numbers.
+The hand-written frontend types reflect this with `'Ready' | ... | number` unions, and generated
+OpenAPI types inherit the ambiguity.
+
+### Goal
+
+Make API enum serialization stable as strings so the contract and generated types are unambiguous.
+
+### Scope
+
+- Register `JsonStringEnumConverter` in the Wolverine HTTP / API JSON options.
+- Update the OpenAPI document and regenerate the frontend client.
+- Simplify frontend enum unions to string-only where applicable.
+
+### Out of Scope
+
+- Renaming enum values.
+
+### Acceptance Criteria
+
+- [ ] API responses serialize the listed enums as strings.
+- [ ] OpenAPI document reflects string enums; generated types drop the `number` fallback.
+- [ ] Backend and frontend tests pass.
+
+### Notes
+
+- Enables cleaner generation in REF-4. Confirm no existing client relies on numeric enum values.
+
+### Labels
+
+- refactoring
+- backend
+- api-contract
+
+---
+
+## Issue: REF-7 Extract a shared current-user-id resolution helper
+
+### Context
+
+`ReportsEndpoint` and `UserEndpoints` each define their own `SubjectClaimType = "sub"` constant and an
+identical `FindFirstValue("sub") ?? FindFirstValue(ClaimTypes.NameIdentifier)` fallback.
+
+### Goal
+
+Resolve the authenticated user id in one place.
+
+### Scope
+
+- Add a single helper (for example a `ClaimsPrincipal`/`HttpContext` extension) in the Api project.
+- Use it from all endpoints that read the current user id.
+
+### Out of Scope
+
+- Changing the claim resolution order or authentication behavior.
+
+### Acceptance Criteria
+
+- [ ] One helper resolves the current user id; duplicated constants/logic are removed.
+- [ ] All affected endpoints use the helper.
+- [ ] Tests pass.
+
+### Labels
+
+- refactoring
+- backend
+- tech-debt
+
+---
+
+## Issue: REF-8 Split UserService by responsibility
+
+### Context
+
+`UserService` (~350 lines) handles login, first-password reset, JWT issuance, refresh-token
+revocation, user CRUD, and role assignment in one class.
+
+### Goal
+
+Apply single responsibility so each concern is independently testable.
+
+### Scope
+
+- Extract a token service (JWT + refresh-token issuance/revocation).
+- Extract an authentication service (login, set-first-password).
+- Keep user CRUD and role management in a user-management service.
+- Re-register the split services in DI.
+
+### Out of Scope
+
+- Changing authentication rules, token lifetimes, or password policy.
+
+### Acceptance Criteria
+
+- [ ] `UserService` responsibilities are split into focused services.
+- [ ] DI registrations are updated; consumers depend on the narrower interfaces.
+- [ ] Existing auth/user tests pass unchanged.
+
+### Labels
+
+- refactoring
+- backend
+- security
+
+---
+
+## Issue: REF-9 Extract shared AI response parsing and JSON options helpers
+
+### Context
+
+`AiSqlGenerator`, `AiReportVisualizer`, and `AiReportIntentClassifier` repeat the same shape: build a
+System+User message pair, call `IAiChatClient.CompleteAsync`, then parse with a fallback. Code-fence
+extraction regex is duplicated in two of them, and `JsonSerializerOptions` (case-insensitive /
+camelCase enum) are re-declared in several places (also in `ReportChatWorkflow` and `ReportMapping`).
+
+### Goal
+
+Centralize the duplicated AI parsing and JSON configuration.
+
+### Scope
+
+- Add a shared helper for code-fence/JSON extraction from model output.
+- Provide shared, reusable `JsonSerializerOptions` instances.
+- Optionally provide a small template for the "complete then parse" pattern.
+
+### Out of Scope
+
+- Changing prompts or model behavior.
+
+### Acceptance Criteria
+
+- [ ] Code-fence extraction and JSON options live in one place and are reused.
+- [ ] AI service unit tests pass unchanged.
+
+### Labels
+
+- refactoring
+- backend
+- ai
+
+---
+
+## Issue: REF-10 Decompose the large ChatDrawer and AdminPanelPage components
+
+### Context
+
+`ChatDrawer.tsx` (~402 lines) and `AdminPanelPage.tsx` (~353 lines) are the largest frontend files.
+The project already uses a decomposition pattern (`use-home-page-controller` plus focused
+`home-page` hooks) that these files do not yet follow.
+
+### Goal
+
+Bring these files in line with the existing decomposition pattern.
+
+### Scope
+
+- Extract chat state/logic from `ChatDrawer` into a hook and split presentational subcomponents.
+- Split `AdminPanelPage` into section components and a controller hook, mirroring the home page.
+
+### Out of Scope
+
+- Changing UI behavior or layout.
+
+### Acceptance Criteria
+
+- [ ] Both files are reduced to composition plus small subcomponents/hooks.
+- [ ] Existing component tests pass; behavior is unchanged.
+
+### Labels
+
+- refactoring
+- frontend
+- tech-debt
+
+---
+
+## Issue: REF-11 Replace manual JSON round-tripping in report persistence with EF Core value converters
+
+### Context
+
+`Report.ResultJson` and `ChartsJson` are stored as JSON strings, and `ReportMapping` deserializes them
+in multiple places with `try/catch`. The "sections, or fallback from report fields" logic in
+`CreateSections` is dense because of this manual round-tripping.
+
+### Goal
+
+Let the domain hold typed values so the mapping layer stops manually (de)serializing JSON.
+
+### Scope
+
+- Introduce EF Core value converters (or JSON columns) for the result and chart specifications.
+- Simplify `ReportMapping` to consume typed properties.
+
+### Out of Scope
+
+- Changing the stored data shape or adding a migration that rewrites existing rows beyond what the
+  converter requires.
+
+### Acceptance Criteria
+
+- [ ] Report result/charts are exposed as typed properties on the entity.
+- [ ] `ReportMapping` no longer performs ad-hoc JSON deserialization with `try/catch`.
+- [ ] A migration (if needed) is added and existing data still reads correctly.
+- [ ] Tests pass.
+
+### Notes
+
+- Lower priority; do after REF-2 to avoid overlapping edits in the report flow.
+- **Resolution (will not do as specified):** exposing typed `Result`/`Charts` on the `Report`
+  entity requires the Domain layer to reference the Application DTOs `TabularResult` and
+  `ChartSpec`. That violates the enforced Domain → Application layer rule (`LayerDependencyTests`),
+  which is why the data is stored as JSON strings in Domain and converted in `ReportMapping`
+  (Application) in the first place. The duplicated `JsonSerializerOptions` concern was already
+  resolved by REF-9 (shared `ReportJson.Options`). Closing as architecturally inconsistent unless
+  Domain-owned value objects are introduced first (out of scope).
+
+### Labels
+
+- refactoring
+- backend
+- data-model

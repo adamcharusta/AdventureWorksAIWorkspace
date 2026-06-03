@@ -7,7 +7,7 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import type { PaletteMode } from '@mui/material/styles'
 import { createElement } from 'react'
 
-import type { ReportSummaryDto } from '@/lib/report-api'
+import type { ReportSummaryDto } from '@/api/generated/model'
 
 import { buildReportMenuItems } from './home-report-menu-items'
 

@@ -1,4 +1,4 @@
-import type { ReportDetailsDto, ReportSummaryDto } from '@/lib/report-api'
+import type { ReportDetailsDto, ReportSummaryDto } from '@/api/generated/model'
 
 type HomeHeaderCopyInput = {
   hasActiveReport: boolean

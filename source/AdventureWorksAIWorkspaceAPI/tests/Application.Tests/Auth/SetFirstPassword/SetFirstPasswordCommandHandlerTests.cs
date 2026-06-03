@@ -7,18 +7,18 @@ namespace AdventureWorksAIWorkspaceAPI.Application.Tests.Auth.SetFirstPassword;
 
 public sealed class SetFirstPasswordCommandHandlerTests
 {
-    private readonly IUserService _userService = Substitute.For<IUserService>();
+    private readonly IAuthenticationService _authenticationService = Substitute.For<IAuthenticationService>();
 
     [Fact]
     public async Task Handle_WhenSuccess_ShouldReturnTokens()
     {
         var tokens = new AuthTokens("access", DateTime.UtcNow.AddHours(1), "refresh", DateTime.UtcNow.AddDays(7));
-        _userService
+        _authenticationService
             .SetFirstPasswordAsync("admin", "NewPass1!", "NewPass1!", Arg.Any<CancellationToken>())
             .Returns(new SetFirstPasswordResult(SetFirstPasswordOutcome.Success, tokens));
 
         var response = await SetFirstPasswordCommandHandler.Handle(
-            new SetFirstPasswordCommand("admin", "NewPass1!", "NewPass1!"), _userService, CancellationToken.None);
+            new SetFirstPasswordCommand("admin", "NewPass1!", "NewPass1!"), _authenticationService, CancellationToken.None);
 
         response.AccessToken.Should().Be("access");
         response.RefreshToken.Should().Be("refresh");
@@ -27,12 +27,12 @@ public sealed class SetFirstPasswordCommandHandlerTests
     [Fact]
     public async Task Handle_WhenInvalidCredentials_ShouldThrowUnauthorizedException()
     {
-        _userService
+        _authenticationService
             .SetFirstPasswordAsync("unknown", "NewPass1!", "NewPass1!", Arg.Any<CancellationToken>())
             .Returns(new SetFirstPasswordResult(SetFirstPasswordOutcome.InvalidCredentials, null));
 
         var act = () => SetFirstPasswordCommandHandler.Handle(
-            new SetFirstPasswordCommand("unknown", "NewPass1!", "NewPass1!"), _userService, CancellationToken.None);
+            new SetFirstPasswordCommand("unknown", "NewPass1!", "NewPass1!"), _authenticationService, CancellationToken.None);
 
         await act.Should().ThrowAsync<UnauthorizedException>();
     }
@@ -40,12 +40,12 @@ public sealed class SetFirstPasswordCommandHandlerTests
     [Fact]
     public async Task Handle_WhenPasswordChangeNotRequired_ShouldThrowForbiddenException()
     {
-        _userService
+        _authenticationService
             .SetFirstPasswordAsync("admin", "NewPass1!", "NewPass1!", Arg.Any<CancellationToken>())
             .Returns(new SetFirstPasswordResult(SetFirstPasswordOutcome.PasswordChangeNotRequired, null));
 
         var act = () => SetFirstPasswordCommandHandler.Handle(
-            new SetFirstPasswordCommand("admin", "NewPass1!", "NewPass1!"), _userService, CancellationToken.None);
+            new SetFirstPasswordCommand("admin", "NewPass1!", "NewPass1!"), _authenticationService, CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>();
     }
@@ -53,12 +53,12 @@ public sealed class SetFirstPasswordCommandHandlerTests
     [Fact]
     public async Task Handle_WhenPasswordChangeFailed_ShouldThrowForbiddenException()
     {
-        _userService
+        _authenticationService
             .SetFirstPasswordAsync("admin", "weak", "weak", Arg.Any<CancellationToken>())
             .Returns(new SetFirstPasswordResult(SetFirstPasswordOutcome.PasswordChangeFailed, null, ["Too weak."]));
 
         var act = () => SetFirstPasswordCommandHandler.Handle(
-            new SetFirstPasswordCommand("admin", "weak", "weak"), _userService, CancellationToken.None);
+            new SetFirstPasswordCommand("admin", "weak", "weak"), _authenticationService, CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>().WithMessage("*Too weak*");
     }

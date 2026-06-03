@@ -16,10 +16,10 @@ public static class UpdateUserCommandHandler
 {
     public static async Task<UpdateUserResponse> Handle(
         UpdateUserCommand command,
-        IUserService userService,
+        IUserManagementService userManagementService,
         CancellationToken cancellationToken)
     {
-        UpdateUserResult result = await userService.UpdateUserAsync(command, cancellationToken);
+        UpdateUserResult result = await userManagementService.UpdateUserAsync(command, cancellationToken);
 
         return result.Outcome switch
         {

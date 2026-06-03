@@ -1,12 +1,10 @@
 using System.Text;
 using AdventureWorksAIWorkspaceAPI.Application.Common.Services;
-using AdventureWorksAIWorkspaceAPI.Application.WeatherForecasts;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.AdventureWorks;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.Database;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.Identity;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.OpenAi;
 using AdventureWorksAIWorkspaceAPI.Infrastructure.Services;
-using AdventureWorksAIWorkspaceAPI.Infrastructure.WeatherForecasts;
 using Ardalis.GuardClauses;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -31,10 +29,11 @@ public static class DependencyInjection
         services.AddIdentityServices(configuration);
         services.AddAdventureWorksServices(configuration);
         services.AddOpenAiServices(configuration);
-        services.AddSingleton<IWeatherForecastProvider, SampleWeatherForecastProvider>();
         services.AddSingleton<ISqlSafetyValidator, SqlSafetyValidator>();
         services.AddScoped<IReportRepository, ReportRepository>();
-        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
 
         return services;
     }
