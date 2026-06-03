@@ -521,7 +521,7 @@ Add persisted report-centered chat endpoints that create reports, append convers
 
 ## Issue: Add optional AI "conclusions" block to report turns
 
-> **Status:** Implemented on 2026-05-29 (on `main`; not filed as a GitHub issue). Nullable `Conclusions` column on `Report` and `GeneratedSqlQuery` (migration `AddReportConclusions`), optional `conclusions` in the visualization prompt/contract, persistence per turn, DTO + GUI ("Conclusions" panel) support. Backend and frontend tests green. See the technical decision "Model optional AI conclusions as a separate field, not an extension of the summary".
+> **Status:** Implemented on 2026-05-29 (on `main`; not filed as a GitHub issue). Nullable `Conclusions` column on `Report` and `GeneratedSqlQuery` (migration `AddReportConclusions`), optional `conclusions` in the visualization prompt/contract, persistence per turn, DTO + frontend ("Conclusions" panel) support. Backend and frontend tests green. See the technical decision "Model optional AI conclusions as a separate field, not an extension of the summary".
 
 ### Context
 
@@ -538,7 +538,7 @@ Let the model attach an optional, free-text **conclusions** block to a report tu
 - Extend the report presentation contract with an optional `Conclusions` value.
 - Extend the visualization system prompt and JSON contract with an optional `conclusions` property; treat absent or empty as "no conclusions".
 - Persist conclusions in the report chat workflow for both the report and the turn's `GeneratedSqlQuery`.
-- Surface conclusions in the report section and details DTOs and in the GUI report view.
+- Surface conclusions in the report section and details DTOs and in the frontend report view.
 
 ### Out of Scope
 

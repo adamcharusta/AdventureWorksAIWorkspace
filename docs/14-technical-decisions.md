@@ -31,7 +31,7 @@ Add a separate, nullable `Conclusions` field on both `Report` (latest turn) and 
 
 This is captured as FR-032 and detailed in [09-reporting-and-visualization.md](09-reporting-and-visualization.md#ai-conclusions).
 
-Implementation notes (2026-05-29): `Conclusions` is a nullable `nvarchar(4000)` column on both `Report` and `GeneratedSqlQuery` (migration `AddReportConclusions`). The visualization step (`AiReportVisualizer`) asks for an optional `conclusions` property and treats absent/empty as null; the heuristic fallback never fabricates conclusions. The report chat workflow persists conclusions per turn and clears them on failed turns. The GUI renders a "Conclusions" panel under the insights only when a value is present.
+Implementation notes (2026-05-29): `Conclusions` is a nullable `nvarchar(4000)` column on both `Report` and `GeneratedSqlQuery` (migration `AddReportConclusions`). The visualization step (`AiReportVisualizer`) asks for an optional `conclusions` property and treats absent/empty as null; the heuristic fallback never fabricates conclusions. The report chat workflow persists conclusions per turn and clears them on failed turns. The frontend renders a "Conclusions" panel under the insights only when a value is present.
 
 ### Consequences
 
@@ -331,7 +331,7 @@ Reference notes:
 
 ---
 
-## Decision: Run Seq, API, and GUI through the local Docker Compose stack
+## Decision: Run Seq, API, and web app through the local Docker Compose stack
 
 ### Date
 
@@ -343,21 +343,21 @@ Accepted
 
 ### Context
 
-Developers need a single local command that can start the observable application stack, not only the SQL Server dependency. The API should run with local configuration, the GUI should proxy API calls inside the Docker network, and structured logs should be visible in Seq.
+Developers need a single local command that can start the observable application stack, not only the SQL Server dependency. The API should run with local configuration, the web app should proxy API calls inside the Docker network, and structured logs should be visible in Seq.
 
 ### Decision
 
 Extend the root `compose.yaml` with:
 
 1. `seq` using the official `datalust/seq` image, with local no-auth first-run configuration.
-2. `api` built from `source/AdventureWorksAIWorkspaceAPI/src/Api/Dockerfile`.
-3. `gui` built from `source/AdventureWorksAIWorkspaceGUI/Dockerfile`.
+2. `api` built from `source/api/src/Api/Dockerfile`.
+3. `web` built from `source/web/Dockerfile`.
 
 The API runs with `ASPNETCORE_ENVIRONMENT=Development`, receives required local secrets through environment variables, connects to SQL Server through the internal service name `sqlserver`, and sends Serilog events to Seq through `http://seq`.
 
-The GUI runs through nginx on port 8080 inside the container and proxies `/api/` requests to `http://api:8080`.
+The web app runs through nginx on port 8080 inside the container and proxies `/api/` requests to `http://api:8080`.
 
-Compose health checks gate local startup: SQL Server is checked with `sqlcmd`, Seq is checked over local HTTP, the API exposes `/health`, and the GUI waits for the API to become healthy.
+Compose health checks gate local startup: SQL Server is checked with `sqlcmd`, Seq is checked over local HTTP, the API exposes `/health`, and the web app waits for the API to become healthy.
 
 ### Consequences
 
@@ -365,7 +365,7 @@ Benefits:
 
 - A developer can start the local application stack with `docker compose up -d --build`.
 - Seq is available locally for structured API log inspection.
-- The GUI and API communicate through stable Docker service names.
+- The web app and API communicate through stable Docker service names.
 - Host port mappings are configurable through `.env`.
 - Startup ordering is less fragile because dependent services wait for health checks instead of process start alone.
 
@@ -860,7 +860,7 @@ Replace `openapi-typescript` and `openapi-fetch` with [Orval](https://orval.dev/
 3. Zod schemas per operation for runtime response validation.
 4. Per-schema model files under `src/api/generated/model/`.
 
-The configuration lives in `source/AdventureWorksAIWorkspaceGUI/orval.config.ts` and runs through `npm run api:gen` (one-shot) and `npm run api:gen:watch` (poll the OpenAPI document).
+The configuration lives in `source/web/orval.config.ts` and runs through `npm run api:gen` (one-shot) and `npm run api:gen:watch` (poll the OpenAPI document).
 
 ### Consequences
 
@@ -898,7 +898,7 @@ Swashbuckle defaults to treating every record property as optional in the genera
 Enable two adjustments in the Swashbuckle configuration:
 
 1. Call `SupportNonNullableReferenceTypes()` so the generated schema honors C# nullable reference type annotations.
-2. Register a custom `RequireNonNullableSchemaFilter` (`source/AdventureWorksAIWorkspaceAPI/src/Api/OpenApi/RequireNonNullableSchemaFilter.cs`) that promotes every non-nullable property to the schema's `required` array. This works around a known Swashbuckle limitation where record primary constructor parameters are not added to `required` automatically.
+2. Register a custom `RequireNonNullableSchemaFilter` (`source/api/src/Api/OpenApi/RequireNonNullableSchemaFilter.cs`) that promotes every non-nullable property to the schema's `required` array. This works around a known Swashbuckle limitation where record primary constructor parameters are not added to `required` automatically.
 
 The schema filter also calls `UseAllOfToExtendReferenceSchemas()` so referenced schemas can be extended without losing the `$ref`.
 
@@ -932,7 +932,7 @@ The default Orval `fetch` HTTP client returns the parsed response regardless of 
 
 ### Decision
 
-Provide a custom fetch mutator at `source/AdventureWorksAIWorkspaceGUI/src/api/customFetch.ts` and wire it through `orval.config.ts` as `override.mutator`. The mutator:
+Provide a custom fetch mutator at `source/web/src/api/customFetch.ts` and wire it through `orval.config.ts` as `override.mutator`. The mutator:
 
 1. Calls `fetch` once with the request init forwarded from TanStack Query.
 2. Reads the body as text and attempts `JSON.parse`, falling back to the raw text when parsing fails.
@@ -1015,7 +1015,7 @@ The shortlist considered three modern libraries:
 
 ### Decision
 
-Use [`sonner`](https://sonner.emilkowal.ski/) and expose a thin MUI-aware wrapper at `source/AdventureWorksAIWorkspaceGUI/src/lib/toast.tsx`. The wrapper:
+Use [`sonner`](https://sonner.emilkowal.ski/) and expose a thin MUI-aware wrapper at `source/web/src/shared/lib/toast.tsx`. The wrapper:
 
 1. Renders every toast through `sonner.custom`, returning a MUI `Alert` (filled variant) with optional `AlertTitle` and a close button wired to `sonner.dismiss`.
 2. Exposes `toast.success`, `toast.error`, `toast.info`, `toast.warning` plus passthrough `dismiss` and `custom` exports.
@@ -1027,7 +1027,7 @@ The `<Toaster />` provider is mounted once in `src/main.tsx` (`position="top-rig
 Benefits:
 
 - Toasts use the same MUI severity palette and elevation as in-page alerts.
-- Consumers stay decoupled from `sonner`'s native API; switching the underlying library later only touches `src/lib/toast.tsx`.
+- Consumers stay decoupled from `sonner`'s native API; switching the underlying library later only touches `src/shared/lib/toast.tsx`.
 - Custom JSX inside toasts (links, secondary actions) remains trivial via `toast.custom`.
 
 Trade-offs:

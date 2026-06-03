@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>AdventureWorksAIWorkspace.Unit.Tests</RootNamespace>
+    <AssemblyName>AdventureWorksAIWorkspace.Unit.Tests</AssemblyName>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Application\AdventureWorksAIWorkspace.Application.csproj" />
+    <ProjectReference Include="..\..\src\Domain\AdventureWorksAIWorkspace.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\AdventureWorksAIWorkspace.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

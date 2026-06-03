@@ -14,7 +14,7 @@ The root `compose.yaml` defines:
 2. `sqlserver` - SQL Server 2025 Developer Edition.
 3. `adventureworks-init` - one-shot AdventureWorks restore job.
 4. `api` - ASP.NET Core API container.
-5. `gui` - React production build served by nginx.
+5. `web` - React production build served by nginx.
 
 The local SQL Server container hosts separate databases:
 
@@ -44,7 +44,7 @@ Use `Production` only when you intentionally want production startup behavior, i
 Default local ports:
 
 ```txt
-GUI:        http://localhost:5173
+Web:        http://localhost:5173
 API:        http://localhost:5159
 Swagger:    http://localhost:5159/swagger
 Seq:        http://localhost:5341
@@ -57,7 +57,7 @@ SQL Server: localhost,1433
 docker compose up -d --build
 ```
 
-The first start may take longer because Docker must pull images, build the API and GUI images, download the AdventureWorks backup, and restore the sample database.
+The first start may take longer because Docker must pull images, build the API and web images, download the AdventureWorks backup, and restore the sample database.
 
 ## Start Only Runtime Services
 
@@ -71,7 +71,7 @@ docker compose up -d
 
 ```powershell
 docker compose logs -f api
-docker compose logs -f gui
+docker compose logs -f web
 docker compose logs -f seq
 docker compose logs -f adventureworks-init
 ```
@@ -91,7 +91,7 @@ The Compose stack uses health checks to sequence local startup:
 - `sqlserver` runs `sqlcmd` with `SELECT 1`.
 - `seq` checks its local HTTP endpoint.
 - `api` exposes `/health` and the container checks it over local HTTP.
-- `gui` waits for the API service to become healthy before starting.
+- `web` waits for the API service to become healthy before starting.
 
 ## Stop the Stack
 
@@ -109,6 +109,6 @@ docker compose down -v
 
 - The API defaults to `ASPNETCORE_ENVIRONMENT=Development` in Compose so Swagger is available locally.
 - The API exposes `/health` for container readiness checks.
-- The GUI uses nginx and proxies `/api/` requests to `http://api:8080`.
+- The web app uses nginx and proxies `/api/` requests to `http://api:8080`.
 - The API currently uses the `sa` login for local Compose database access. A future hardening task should add separate least-privilege logins for the application database and AdventureWorks analytical database.
 - Seq authentication is disabled only for local development.

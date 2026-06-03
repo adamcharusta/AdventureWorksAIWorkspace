@@ -32,7 +32,24 @@ Responsible for:
 - Export actions.
 - Transient user feedback through MUI-styled toasts.
 
-The frontend lives under `source/AdventureWorksAIWorkspaceGUI/`. It is bootstrapped with Vite and uses React 19, TypeScript, Material UI 9, MUI Charts, TanStack Query for server state, and sonner for toast notifications. Cypress drives end-to-end and component tests; Vitest drives unit and integration tests through jsdom.
+The frontend lives under `source/web/`. It is bootstrapped with Vite and uses React 19, TypeScript, Material UI 9, MUI Charts, TanStack Query for server state, and sonner for toast notifications. Cypress drives end-to-end and component tests; Vitest drives unit and integration tests through jsdom.
+
+The frontend source is organized around product features:
+
+```txt
+source/web/src/
+  app/
+  api/
+  features/
+    admin/
+    auth/
+    reports/
+    workspace/
+  shared/
+  test/
+```
+
+Generated OpenAPI client code stays under `src/api/generated/`. Application routing and top-level pages live under `src/app/`. Product-specific code lives under `src/features/`, while cross-feature utilities, theme support, and shared UI live under `src/shared/`.
 
 ### .NET REST API
 
@@ -52,7 +69,7 @@ Responsible for:
 The backend API solution is organized under:
 
 ```txt
-source/AdventureWorksAIWorkspaceAPI/src/
+source/api/src/
   Domain/
   Application/
   Infrastructure/
@@ -263,7 +280,7 @@ flowchart LR
 
 Key elements:
 
-- `source/AdventureWorksAIWorkspaceGUI/orval.config.ts` configures Orval with two outputs:
+- `source/web/orval.config.ts` configures Orval with two outputs:
   - `api` produces TanStack Query hooks, MSW handlers, and per-schema models under `src/api/generated/`.
   - `apiZod` produces Zod schemas under `src/api/generated/zod/`.
 - The generated hooks call a custom fetch mutator at `src/api/customFetch.ts`. The mutator throws a typed `ApiError` whenever `response.ok` is `false`, so TanStack Query reports failures through its `error` channel instead of silently returning empty data.
@@ -273,7 +290,7 @@ Key elements:
 
 ## Frontend Notifications
 
-The frontend exposes a thin toast wrapper at `source/AdventureWorksAIWorkspaceGUI/src/lib/toast.tsx`. The wrapper:
+The frontend exposes a thin toast wrapper at `source/web/src/shared/lib/toast.tsx`. The wrapper:
 
 - Renders every toast through `sonner.custom`.
 - Uses MUI `Alert` (filled variant) with optional `AlertTitle` and a built-in close button.
@@ -299,6 +316,6 @@ The local Compose stack includes:
 - `sqlserver` for local SQL Server hosting both separate development databases.
 - `adventureworks-init` for idempotent AdventureWorks restore.
 - `api` for the ASP.NET Core backend.
-- `gui` for the React frontend served by nginx.
+- `web` for the React frontend served by nginx.
 
-The GUI proxies `/api/` requests to the API over the internal Docker network. The API writes Serilog events to Seq over the internal Docker network.
+The web app proxies `/api/` requests to the API over the internal Docker network. The API writes Serilog events to Seq over the internal Docker network.

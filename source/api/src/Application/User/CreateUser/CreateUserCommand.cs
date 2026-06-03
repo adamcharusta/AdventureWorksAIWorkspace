@@ -1,0 +1,37 @@
+using AdventureWorksAIWorkspace.Application.Common.Dtos;
+using AdventureWorksAIWorkspace.Application.Common.Dtos.User;
+using AdventureWorksAIWorkspace.Application.Common.Exceptions;
+using AdventureWorksAIWorkspace.Application.Common.Services.User;
+
+namespace AdventureWorksAIWorkspace.Application.User.CreateUser;
+
+public sealed record CreateUserCommand(string UserName, string Email, string? Role = null);
+
+public static class CreateUserCommandHandler
+{
+    public static async Task<CreateUserResponse> Handle(
+        CreateUserCommand command,
+        IUserManagementService userManagementService,
+        CancellationToken cancellationToken)
+    {
+        CreateUserResult result = await userManagementService.CreateUserAsync(
+            command.UserName, command.Email, command.Role, cancellationToken);
+
+        return result.Outcome switch
+        {
+            CreateUserOutcome.Success => new CreateUserResponse(
+                result.UserId!, result.UserName!, result.Email!, result.Role!),
+
+            CreateUserOutcome.UserAlreadyExists =>
+                throw new ForbiddenException("A user with this user name or email already exists."),
+
+            CreateUserOutcome.CreationFailed =>
+                throw new ForbiddenException(string.Join(" ", result.Errors ?? [])),
+
+            CreateUserOutcome.InvalidRole =>
+                throw new ForbiddenException($"The role '{command.Role}' is not valid."),
+
+            _ => throw new InvalidOperationException($"Unexpected outcome: {result.Outcome}")
+        };
+    }
+}

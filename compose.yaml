@@ -66,7 +66,7 @@ services:
 
   api:
     build:
-      context: ./source/AdventureWorksAIWorkspaceAPI
+      context: ./source/api
       dockerfile: src/Api/Dockerfile
     image: adventureworks-ai-api:dev
     container_name: adventureworks-ai-api
@@ -86,8 +86,8 @@ services:
       Identity__InitialAdmin__UserName: ${INITIAL_ADMIN_USERNAME:-admin}
       Identity__InitialAdmin__Email: ${INITIAL_ADMIN_EMAIL:-admin@adventureworksai.local}
       Identity__InitialAdmin__TemplatePassword: ${INITIAL_ADMIN_PASSWORD:?Set INITIAL_ADMIN_PASSWORD in your environment or local .env file}
-      Identity__Jwt__Issuer: AdventureWorksAIWorkspaceAPI
-      Identity__Jwt__Audience: AdventureWorksAIWorkspaceGUI
+      Identity__Jwt__Issuer: AdventureWorksAIWorkspace.Api
+      Identity__Jwt__Audience: AdventureWorksAIWorkspace.Web
       Identity__Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in your environment or local .env file}
       Identity__Jwt__AccessTokenLifetimeMinutes: ${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-60}
       Identity__Jwt__RefreshTokenLifetimeDays: ${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-7}
@@ -111,19 +111,19 @@ services:
       retries: 12
       start_period: 20s
 
-  gui:
+  web:
     build:
-      context: ./source/AdventureWorksAIWorkspaceGUI
+      context: ./source/web
       dockerfile: Dockerfile
-    image: adventureworks-ai-gui:dev
-    container_name: adventureworks-ai-gui
+    image: adventureworks-ai-web:dev
+    container_name: adventureworks-ai-web
     depends_on:
       api:
         condition: service_healthy
     environment:
       BACKEND_URL: http://api:8080
     ports:
-      - "${GUI_PORT:-5173}:8080"
+      - "${WEB_PORT:-5173}:8080"
 
 volumes:
   seq-data:

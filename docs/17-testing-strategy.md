@@ -9,7 +9,7 @@ This document defines the planned testing structure for AdventureWorksAIWorkspac
 The API solution uses layered test projects under:
 
 ```txt
-source/AdventureWorksAIWorkspaceAPI/tests/
+source/api/tests/
   Unit.Tests/
   Application.Tests/
   Functional.Tests/
@@ -92,8 +92,8 @@ Suggested scope:
 The frontend uses two complementary runners. Each has a dedicated mocking strategy that suits the runtime it executes in.
 
 ```txt
-source/AdventureWorksAIWorkspaceGUI/
-  src/                  # Vitest unit and component tests live next to the source
+source/web/
+  src/                  # Vitest unit and component tests live next to app/features/shared source
   cypress/component/    # Cypress component tests
   cypress/e2e/          # Cypress end-to-end tests
 ```
@@ -130,7 +130,7 @@ Mocking strategy:
 
 End-to-end tests under `cypress/e2e/` exercise the assembled application against either:
 
-- A locally running API + GUI pair.
+- A locally running API + web app pair.
 - Future mocked HTTP responses for fully isolated runs.
 
 End-to-end coverage is intentionally lighter than Vitest and component test coverage. It should focus on critical user flows such as login, report generation, report reopen, favorite, tag, and export.
